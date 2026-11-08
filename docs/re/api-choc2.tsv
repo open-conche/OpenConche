@@ -1,0 +1,158 @@
+name	kind	args	returns	alias	evidence	note
+bsgCheckConfig	function	string key	bool	CheckConfig	call-sites	11 uses, always a settings key ("local", "xsell"). Alias.
+bsgDollars	function	number	string	@native	c1:UtilDollars	77 uses. Not an alias: UtilDollars truncates toward zero (Dollars rounds); formatted like Dollars (the string-table route formatOnes/Thousands/Millions/Billions and the 32-bit unsigned wrap of negatives are not implemented). Choc2Natives.cpp.
+bsgFloor	function	number	number	Floor	call-sites	61 uses. Alias.
+bsgMod	function	number a, number b	number	Mod	call-sites	9 uses. Alias.
+bsgRandom	function	number lo, number hi	number	RandRange	call-sites	35 uses, e.g. sim.lua:690 bsgRandom(900,1000). Alias.
+bsgCurrentTime	function		number	CurrentTime	call-sites	4 uses. Alias.
+bsgLoadGameString	function		string	@native	call-sites	2 uses (sim.lua:354, 374). Not an alias: Simulator:LoadGame sets the game mode first, so the native keeps one save per user per mode (mode 0 = Chocolatier 3's save.txt, any other mode = save_free.txt). Choc2Natives.cpp.
+bsgSaveGameString	function	string	(none)	@native	call-sites	1 use (sim.lua:327). Same slot choice as bsgLoadGameString. Choc2Natives.cpp.
+bsgReadFromFile	function	string name	string	ReadFromFile	call-sites	1 use. Alias.
+bsgWriteToFile	function	string name, string text	(none)	WriteToFile	call-sites	1 use. Alias.
+bsgLogScore	function		(none)	LogScore	call-sites	1 use. Alias.
+bsgRandomSeed	function		(none)	@native	design	Reseeds nothing: our Rng is seeded from --seed (design 2.2). Choc2Natives.cpp.
+bsgLuaGarbageCollect	function		(none)	@native	design	No-op. Choc2Natives.cpp.
+bsgTriggerOffer	function		(none)	@native	design	Online offers are out of scope: no-op. Choc2Natives.cpp.
+bsgTriggerAd	function		(none)	@native	design	Online ads are out of scope: no-op. Choc2Natives.cpp.
+OpenBrowser	function	string url	(none)	@native	design	Out of scope: no-op. Choc2Natives.cpp.
+SetUserName	function	number index, string name	(none)	@native	design	Renames through UserStore (zero-based index like GetUserName). Choc2Natives.cpp.
+SetCurrentGameMode	function	number mode	(none)	@native	call-sites	Shared name, different meaning: stores any mode (Chocolatier 3 stores only 0); Free Play calls SetCurrentGameMode(1) and Simulator:LoadGame branches on it. Choc2Natives.cpp.
+GetCurrentGameMode	function		number	@native	design	Returns the "gamemode" pref SetCurrentGameMode stored (0 when unset). Choc2Natives.cpp.
+bsgDate	function	number weeks, number days	string	@native	none	"Month D, YYYY" from the string table (choc2-ledger-binary.md 6). Choc2Natives.cpp.
+bsgShortDate	function	number weeks, number days	string	@native	none	"D Mon YYYY" (choc2-ledger-binary.md 6). Choc2Natives.cpp.
+bsgTimeStamp	function		string	@native	c1:UtilTimeStamp	Local time, strftime("%Y.%m.%d-%H.%M.%S"). Dev-only. Choc2Natives.cpp.
+bsgNextSaveFileName	function		string	@native	c1:UtilNextSaveFile	Dev-only (dev/devfile.lua) iterator over *.choco2 files of the user: directory; there are none here, so always "". Choc2Natives.cpp.
+bsgGetMaxScroll	function	string textName	number	@native	call-sites	The 0-based last useful start line of the named Text (lines less the whole lines that fit); -1 when there is no such Text, which the Lua's +1 > 0 test skips. Inference (PL 2.2).
+bsgSetStartLine	function	string textName, number line	(none)	@native	call-sites	TextWindow::setStartLine(clamp(line - 1, 0, max)); the Lua line is 1-based. Inference (PL 2.2).
+bsgSetGlobalLabel	function		(none)	-	none	Unknown arguments.
+bsgAddSprite	function		(none)	@native	none	Port scene: Port.cpp / PortScene.cpp. Choc2Natives.cpp.
+bsgSin	function	number degrees	number	@native	call-sites	Degrees (ui/recipebook_recipe.lua passes i*360/n). Choc2Natives.cpp.
+bsgCos	function	number degrees	number	@native	call-sites	Degrees, as bsgSin. Choc2Natives.cpp.
+PlaySound	function	string	(none)	@native	call-sites	Bare name -> sfx/<name>.ogg, a name with a slash is a path; one-shot on the direct group. Choc2AudioNatives.cpp.
+LoadSound	function	string	(none)	@native	call-sites	Decodes sfx/<name>.ogg into the sound cache, no sound. Choc2AudioNatives.cpp.
+SetAmbient	function	string	(none)	-	call-sites	Audio (design 2.5): a logged stub.
+SetMusicState	function	string state, string file	(none)	-	call-sites	Audio (design 2.5): a logged stub.
+PauseMusic	function		(none)	-	call-sites	Audio (design 2.5): a logged stub.
+ResumeMusic	function		(none)	-	call-sites	Audio (design 2.5): a logged stub.
+DoIntro	function		(none)	@native	call-sites	MainMenu intro (game/choc2/MainMenuWindow): shows intro_button, fades fade_buttons and fade_text out (1 s), crawls intro_text up over 30 s on the modal clock, then presses the button command once. Fade, crawl and timings are pure inference (packed exe). Choc2Natives.cpp.
+StopPulsing	function		(none)	@native	call-sites	Logged no-op: nothing pulses (what starts a pulse is unknown). Choc2Natives.cpp.
+StopProductionAnim	function		(none)	@native	call-sites	Logged no-op (behaviour unknown). Choc2Natives.cpp.
+StartProductionAnim	function		(none)	@native	call-sites	Logged no-op (behaviour unknown). Choc2Natives.cpp.
+ResetColorMap	function		(none)	@native	call-sites	Logged no-op (behaviour unknown). Choc2Natives.cpp.
+InitiateTravel	function	table leg	(none)	@native	call-sites	OVERRIDE of the Chocolatier 3 InitiateTravel{path,type,events}: here the argument is a route leg {weeks, type, {x,y}...}; starts the leg on the MapTravel and loads image/icon_<type>. Logged no-op without a MapTravel. Choc2Natives.cpp.
+TravelOneWeek	function	string type	(none)	@native	call-sites	Animates one week of the leg (week/weeks to (week+1)/weeks of the curve) over 2000 ms (inferred), dropping image/traveldot every 12 px. Choc2Natives.cpp.
+StillTravelling	function		bool	@native	call-sites	True while a week animates; false when there is no MapTravel so the Lua wait loop cannot hang. Choc2Natives.cpp.
+SetLedgerContents	function	string mode	(none)	@native	call-sites	Records the tab in the session; with a ledger shows and rebuilds that body and sets its radio button. Inference (C1 UtilSetLedgerTab).
+UpdateLedgerContents	function	string mode	(none)	@native	call-sites	Rebuilds that body only if it is the one shown. Inference.
+SetLedgerMode	function	string mode	(none)	@native	call-sites	"port" shows to_map and hides to_port (with their labels); "map" the reverse. Inference (C3 portview/mapview).
+ResetLedger	function	number money	(none)	@native	call-sites	The money counter snaps. Inference.
+UpdateBadge	function	table gSim	(none)	@native	call-sites	Rebuilds the badge DynamicWindow, targets gSim.money, writes the money and score Texts. The score string is formatScore with the whole-dollar score, empty at rank 0: inference.
+UpdateDynamicContent	function	string name	(none)	@native	call-sites	Rebuilds every DynamicWindow with that name in the modal chain (C1 UpdateDynamicWindow).
+SetQuestHint	function	string text	(none)	@native	call-sites	Writes quest_text and slides the quest bar to showQuestY or hideQuestY over 500 ms (the duration is a guess).
+SetCharacterMood	function		(none)	@native	call-sites	choc2::Character mood faces, thresholds 25/70 inferred. Choc2Natives.cpp.
+RollFirst	function		(none)	-	call-sites	DiceGame.
+RollSecond	function		(none)	-	call-sites	DiceGame.
+StopOne	function		(none)	-	call-sites	DiceGame.
+PlayerTotal	function		number	-	call-sites	DiceGame.
+CharacterTotal	function		number	-	call-sites	DiceGame.
+GetProduction	function		number	-	call-sites	FactoryGame.
+PauseMinigame	function		(none)	-	call-sites	FactoryGame.
+ResumeMinigame	function		(none)	-	call-sites	FactoryGame.
+ResetMinigame	function		(none)	-	call-sites	FactoryGame.
+SetLogoText	function		(none)	-	call-sites	LogoEditor.
+GetLogoString	function		string	-	call-sites	LogoEditor.
+RandomizeLogo	function		(none)	-	call-sites	LogoEditor.
+SetTextPosition	function		(none)	-	call-sites	LogoEditor.
+SetGraphicPosition	function		(none)	-	call-sites	LogoEditor.
+SetTextColor	function		(none)	-	call-sites	LogoEditor.
+ToggleBold	function		(none)	-	call-sites	LogoEditor.
+ToggleItalic	function		(none)	-	call-sites	LogoEditor.
+ToggleOutline	function		(none)	-	call-sites	LogoEditor.
+SetLeftJustify	function		(none)	-	call-sites	LogoEditor.
+SetCenterJustify	function		(none)	-	call-sites	LogoEditor.
+SetRightJustify	function		(none)	-	call-sites	LogoEditor.
+ViewLocal	function		(none)	-	call-sites	HighScores.
+ViewGlobal	function		(none)	-	call-sites	HighScores.
+NextMode	function		(none)	-	call-sites	HighScores.
+PreviousMode	function		(none)	-	call-sites	HighScores.
+NextCategory	function		(none)	-	call-sites	HighScores.
+PreviousCategory	function		(none)	-	call-sites	HighScores.
+ScrollUp	function		(none)	-	call-sites	HighScores.
+ScrollDown	function		(none)	-	call-sites	HighScores.
+SubmitScore	function		(none)	-	call-sites	HighScores.
+SubmitMedals	function		(none)	-	call-sites	HighScores.
+GetSubmitInfo	function		(none)	-	call-sites	HighScores.
+Window	constructor			-	design	A real plain built-in for every game (design 2.3); registered for all games, this row only documents it.
+Frame	constructor			@native	design	FrameWindow (inferred look, design 2.4 #1). Choc2Natives.cpp.
+MainMenu	constructor			@native	design	A plain container until DoIntro. Choc2Natives.cpp.
+Options	constructor			@native	design	A plain container for now (design 2.4 #3). Choc2Natives.cpp.
+HighScores	constructor			@native	design	A plain container for now (design 2.4 #4). Choc2Natives.cpp.
+Credits	constructor			-	design	Not implemented.
+Character	constructor			@native	design	choc2::Character. Choc2Natives.cpp.
+DynamicWindow	constructor			@native	design	choc2::DynamicWindow (C1 TDynamicWindow rebuild semantics). Choc2Natives hook: Choc2LedgerNatives.cpp.
+Sprite	constructor			@native	design	choc2::SpriteWindow. Choc2Natives.cpp.
+AnimationWindow	constructor			@native	design	choc2::AnimationWindow, a plain container. Choc2Natives.cpp.
+Port	constructor			@native	design	choc2::Port. Choc2Natives.cpp.
+Map	constructor			@native	design	choc2::Map, a container that reads the ports/routes/current style keys. Choc2Natives.cpp.
+MapTravel	constructor			@native	design	choc2::MapTravel, the travel natives' window. Choc2Natives.cpp.
+Ledger	constructor			@native	design	choc2::Ledger. Choc2LedgerNatives.cpp.
+FactoryGame	constructor			-	design	Not implemented.
+FactoryStatus	constructor			-	design	Not implemented.
+DiceGame	constructor			-	design	Not implemented.
+BonusGame	constructor			-	design	Not implemented.
+LogoEditor	constructor			-	design	Not implemented.
+gScreenWidth	global	800	number	-	call-sites	ui/uiconstants.lua:49 builds `ui` from these six; unset they made every ui.screenWidth nil (the black menu).
+gScreenHeight	global	600	number	-	call-sites	The game is fixed at 800x600.
+gRealWidth	global	800	number	-	call-sites	The real window size: the same as the game's at 800x600.
+gRealHeight	global	600	number	-	call-sites
+gRealXOffset	global	0	number	-	call-sites	No letterbox offset at 800x600.
+gRealYOffset	global	0	number	-	call-sites
+# logo: the LogoEditor natives are real (a later row of the same name replaces the stub row above)
+SetLogoText	function	string text	(none)	@native	call-sites	Sets `t` of the open LogoEditor's working copy and re-renders the preview. Inference. Choc2LogoNatives.cpp.
+GetLogoString	function		string	@native	call-sites	The working copy as a Lua chunk `return {b=...,l=...,t=...,...}` (LogoSpec::toLuaString); nil with no editor. Inference. Choc2LogoNatives.cpp.
+RandomizeLogo	function		(none)	@native	call-sites	Random background (1..8), stock graphic (1..12) and font (0..8) from the game RNG, in that order; moves the three sliders. Inference. Choc2LogoNatives.cpp.
+SetTextPosition	function	number x, number y	(none)	@native	call-sites	tx, ty = round(arg * 1000); moves the textx and texty sliders. Inference. Choc2LogoNatives.cpp.
+SetGraphicPosition	function	number x, number y	(none)	@native	call-sites	lx, ly = round(arg * 1000); moves the logox and logoy sliders. Inference. Choc2LogoNatives.cpp.
+SetTextColor	function	number r, number g, number b, number a	(none)	@native	call-sites	0..255 RGB stored as tch/tcs/tcv (HSV thousandths); the alpha is ignored. Inference. Choc2LogoNatives.cpp.
+ToggleBold	function		(none)	@native	call-sites	Flips tfb and the `bold` button's state. Inference. Choc2LogoNatives.cpp.
+ToggleItalic	function		(none)	@native	call-sites	Flips tfi and the `italic` button's state. Inference. Choc2LogoNatives.cpp.
+ToggleOutline	function		(none)	@native	call-sites	Flips tfo and the `outline` button's state. Inference. Choc2LogoNatives.cpp.
+SetLeftJustify	function		(none)	@native	call-sites	to = 4 (kHAlignLeft + kVAlignCenter). Inference. Choc2LogoNatives.cpp.
+SetCenterJustify	function		(none)	@native	call-sites	to = 5. Inference. Choc2LogoNatives.cpp.
+SetRightJustify	function		(none)	@native	call-sites	to = 6. Inference. Choc2LogoNatives.cpp.
+# options: Options, HighScores and Credits are real windows, with the natives of ui/hiscore_local.lua and ui/hiscoresubmit.lua (a later row of the same name replaces the stub row above)
+Options	constructor			@native	call-sites	choc2::Options (OptionsWindow.h): the sliders sfxslider/ambientslider/musicslider take the user's soundlevel/ambientlevel/musiclevel on open and apply live, the fullscreen and mute check boxes take the current state. SaveVolumes, ToggleFullScreen and ToggleSoundMute are Chocolatier 3's natives. Choc2MenuNatives.cpp.
+HighScores	constructor			@native	call-sites	choc2::HighScores (HighScoresWindow.h): the local list of the viewed mode in name<i>, score<i>, <i>, p1_<i> (i = 1..10). Choc2MenuNatives.cpp.
+Credits	constructor			@native	call-sites	choc2::Credits (CreditsWindow.h): Chocolatier 3's scroll with Chocolatier 2's credits.txt markup; the Lua passes only x y w h font, so the rest is fixed. Inference. Choc2MenuNatives.cpp.
+ViewLocal	function	number	(none)	@native	call-sites	Always called with 0 (hiscore_local.lua). First page of the viewed mode's local list. Choc2MenuNatives.cpp.
+ViewGlobal	function	number	(none)	@native	call-sites	Always called with 0. Offline: logged once, the local list stays (hiscorelocal policy). Choc2MenuNatives.cpp.
+NextMode	function		(none)	@native	call-sites	Steps the viewed game mode (Story 0, Free Play 1), wrapping. Inference. Choc2MenuNatives.cpp.
+PreviousMode	function		(none)	@native	call-sites	As NextMode, backwards. Choc2MenuNatives.cpp.
+NextCategory	function		(none)	@native	call-sites	Online categories only: logged once, no-op. Choc2MenuNatives.cpp.
+PreviousCategory	function		(none)	@native	call-sites	As NextCategory. Choc2MenuNatives.cpp.
+ScrollUp	function		(none)	@native	call-sites	No effect on the local list (top ten only, hiscore.md 2.4). Choc2MenuNatives.cpp.
+ScrollDown	function		(none)	@native	call-sites	No effect on the local list. Choc2MenuNatives.cpp.
+GetSubmitInfo	function		string	@native	call-sites	Lua source the submit dialog loadstring's: gName (the current user), gUsername, gPassword, gRemember, gScore. Offline defaults. Choc2MenuNatives.cpp.
+SubmitScore	function	string name, string username, string password, bool remember	(none)	@native	call-sites	hiscoresubmit.lua. Offline: logged once, nothing is sent. Choc2MenuNatives.cpp.
+SubmitMedals	function	number flags, string name, string username, string password, bool remember	(none)	@native	call-sites	hiscoresubmit.lua. Offline: logged once, nothing is sent. Choc2MenuNatives.cpp.
+# music: the Chocolatier 2 music and ambience natives are real (a later row of the same name replaces the stub row above)
+SetMusicState	function	string state, string file	(none)	@native	call-sites	State machine in Audio::setMusicState: ("normal", file) plays a sting/fanfare once and returns to the gameplay rotation (gameplay1..3 by the audio RNG), music/gameplay4.ogg loops as the menu track, ("normal") keeps the rotation going, "silent" fades out, "factory_wait" loops minigame_wait, "" loops minigame; 1000 ms fade-out, 0 in. All inference (packed exe). Choc2AudioNatives.cpp.
+SetAmbient	function	string path	(none)	@native	call-sites	Loops the sfx/<x>_loop.ogg bed in the environment group with a 300 ms crossfade; "" stops; the bed already playing is left alone; a missing file (sfx/market_loop.ogg) logs once and is silent. Inference. Choc2AudioNatives.cpp.
+PauseMusic	function		(none)	@native	call-sites	Pauses the music track only (ambience keeps playing). Inference. Choc2AudioNatives.cpp.
+ResumeMusic	function		(none)	@native	call-sites	Resumes the music track. Inference. Choc2AudioNatives.cpp.
+# factory: FactoryGame and FactoryStatus are real windows and the minigame natives act on the newest FactoryGame (a later row of the same name replaces the stub row above)
+FactoryGame	constructor			@native	call-sites	choc2::FactoryGame (FactoryGame.h): Chocolatier 3's ChocolateFactory fed by factorySpec, the key adapter of docs/design/choc2-minigames.md 2.1; the keys are fact (ui/factory_minigame.lua), the native behaviour behind them is inferred. Choc2FactoryNatives.cpp.
+FactoryStatus	constructor			@native	call-sites	choc2::FactoryStatus (FactoryStatus.h): bars {left, top, right, bottom, fill} and products {x, y, name, rate, type, recipeSize} (fact, bytecode of ui/ledger_factories.lua); the drawing (a bar filled from the bottom in a band colour, image/tray<N>_mini at (x, y)) is inferred. Choc2FactoryNatives.cpp.
+ResumeMinigame	function		(none)	@native	call-sites	Idle: starts the game (the countdown); paused: resumes; over: nothing. Choc2FactoryNatives.cpp.
+PauseMinigame	function		(none)	@native	call-sites	Pauses a started game that is not over, which calls the Lua global MinigamePause. Choc2FactoryNatives.cpp.
+ResetMinigame	function		(none)	@native	call-sites	Back to the idle state (Try Again); calls nothing back. Choc2FactoryNatives.cpp.
+GetProduction	function		number	@native	call-sites	The score: products counted at the belt's end plus colour-match rings; 0 with no FactoryGame. Inference. Choc2FactoryNatives.cpp.
+# dice: DiceGame is a real window with the natives of ui/gamble_dice.lua (a later row of the same name replaces the stub row above)
+RollFirst	function		(none)	@native	call-sites	Rolls dice 0 and 1 (the player's first two): their faces are drawn from the game stream (2 draws), they spin 2000 ms and stop at 2790 and 3534 ms. Ignored while a roll runs. Inference (C1 RollDice). Choc2DiceNatives.cpp.
+RollSecond	function		(none)	@native	call-sites	Rolls dice 2 to 7 (6 draws in die order); stops at 2790, 3534, 4278, 5022, 5766, 6510 ms. Ignored while a roll runs. Inference. Choc2DiceNatives.cpp.
+StopOne	function		(none)	@native	call-sites	C1 StopDie: the next die of the roll stops on the next 62 ms tick; nothing when idle. Inference. Choc2DiceNatives.cpp.
+PlayerTotal	function		number	@native	call-sites	Sum of the stopped faces of die_0..die_3; 0 with no DiceGame. Choc2DiceNatives.cpp.
+CharacterTotal	function		number	@native	call-sites	Sum of the stopped faces of die_4..die_7; 0 with no DiceGame. Choc2DiceNatives.cpp.
+DiceGame	constructor			@native	call-sites	choc2::DiceGame (DiceGame.h): the container of the eight die Bitmaps; each stopped die shows image/die<v> and adds 1 to gDiceRollCount. Choc2DiceNatives.cpp.
+# bonus: BonusGame is a real window (a later row of the same name replaces the stub row above); PrepareGame and SelectPrize are the shared crates natives
+BonusGame	constructor			@native	call-sites	CratesGame built from CratesSpec::bonus(): 25 crates (select_1..select_25) in 5 columns, art image/large_crate, large_crate_open, large_crate_front and whammy_devil, sounds sfx/crate_click, crate_with_money, crate_no_money; prize factors are a GUESS (Chocolatier 3 table scaled by 25/21: 4x0.435, 0.4, 5x0.35, 5x0.25, 3x0.24, 0.15, 0.1, 0.05, 4x0; sum 6.16); shuffle draws rng.range(0,24) once per crate in slot order. Choc2BonusNatives.cpp.

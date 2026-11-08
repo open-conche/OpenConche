@@ -1,0 +1,57 @@
+name	kind	args	returns	source address	note
+PortWindow	window-type	keys: background(string), port(table), musicDelay(number, 25000) + TWindow keys	window	0x2f440 (PortWindowDynamicCreate); Init 0x2f47e; PostChildrenInit 0x32348	AddWindowType from ChocoThreeMain. Generic generated constructor (no ui/style.lua wrapper). Reads the Port Lua table once.
+CharWindow	window-type	keys: name(string), alpha(1), scale(1), happiness(50) + BSGWindow keys	window	0x73de (CharacterDynamicCreate); PostChildrenInit 0x78ba	Character : TBSGWindow. Loads characters/<name>.xml, else .png, else characters/temp_char.
+PopupWindow	internal-class	(TPopupTest*) ctor; SetContents(str), SetClickFunction, SetClickString, Reposition(int,int), Kill()	n/a	ctor 0x2e9aa; SetContents 0x2e7f2; Reposition 0x2e5a4; Kill 0x2e696	No Lua constructor. Created by Rollover::OnMouseMove only.
+PausePortAnimations	function	bool pause	nothing	0x2ec2a (PortWindow::PausePortAnimations); registered in PortWindow::Init 0x2f47e	Bound to the PortWindow instance current at Init (stale pointer if the window dies). pause=true: TAnimTask::Pause; false: SetDelay(50,true,true,true). Used by sim/product.lua:696,701.
+SetMood	function	string characterName, number happiness(0..100)	nothing	0x7866 (Character::SetCharacterMood); registered in ChocoThreeMain (_free/c.c:249)	Applies Character::SetMood to every live Character window with that name; target frame cross-fades over 200 ms. Used by sim/character.lua:117,131.
+<buildingName>:OnClick()	lua-eval	string chunk 'gCurrentBuilding=nil;' .. name .. ':OnClick()'	n/a	PortWindow::OnMouseUp 0x2f906	Run with TScript::DoLuaString(main script, str, -1, 0) when press and release hit the same building. Global named like the building must exist (Building:Create sets _G[name]).
+if not gUIPaused then DoModal('ui/ui_pause.lua') end	lua-eval	string chunk	n/a	PortWindow::WindowToggleForeground 0x2eb60	Run via TWindowManager::DoLuaString(window, str) when the app loses foreground and the top modal is the PortWindow.
+Stop_Music / port_music1..3	sound-event	BSGSoundEvent(str)	n/a	PortWindow::ChangeMusic 0x2ec46	Toggles every RandRange(10000,15000) (stop) / RandRange(40000,60000) (play); first toggle at musicDelay (25000).
+port.name	table-key	string, default ''		PortWindow::CollectBuildingData 0x31936	Builds texture paths 'ports/<name>/<building>'.
+port.buildings	table-key	array of building tables		0x31936	Per building: name, x(0), y(0), layer(0), labelx, labely.
+port.sprites	table-key	array of sprite tables		PortWindow::CollectSpriteData 0x2fa68	See docs/re/port-window.md 1.3 for the per-sprite key list.
+port.yFar/yNear/scaleFar/scaleNear	table-key	number; defaults 0, 800, 1, 1		0x2fa68	Defaults for path sprites.
+sprite.frequency	table-key	number, default 100		0x2fa68	Kept if RandRange(0,99) < frequency.
+sprite.images/masks/image/mask	table-key	arrays / strings		0x2fa68	images picks RandRange(1,n); masks[same index].
+sprite.path/time/motion	table-key	array of {x,y}; number ms; 'loop'|'oneway'|'bounce'		0x2fa68	path selects TPathSprite. Unknown motion strings become LOOP.
+sprite.layer/behind.layer	table-key	number; table		0x2fa68	behind.layer n -> layer n-1 (0 if n==0).
+sprite.x/y/scale	table-key	number		0x2fa68	Static sprites: position (centre) and uniform scale. Path sprites: scale>0 overrides scaleFar/Near; x,y ignored.
+sprite.yFar/yNear/scaleFar/scaleNear/speedFar/speedNear	table-key	number		0x2fa68	Per-sprite overrides; speeds default 1.
+sprite.random/htile/tint/tints	table-key	bool(true); number(0); colour; array of colours		0x2fa68	random=false starts at path origin; htile adds 4 copies at +-htile, +-2*htile; tints picks RandRange(1,n).
+PortWindow::FindBuilding	method	TPoint	list iterator	0x2f6e2	Highest-layer building whose sprite rect contains the point (rect only, alpha threshold 0).
+PortWindow::DoAnimation	method	none	bool true	0x2ee9a	Called by PortAnimTask every >=50 ms (vtable +0x74). Order: intro fade, lastTime, hover pulse, path updates (50 ms each), music.
+PortAnimTask	internal-class	PortWindow*		0x1721f8; Animate 0x172228	TAnimTask, SetDelay(50,true,true,true).
+Character::SetMood	method	float 0..100		0x76fa	4-frame sheets: <33.3 ->1, <66.7 ->2, else 3.
+Character::OnTaskAnimate	method	none	bool	0x71da	timer += 50; done at 200 ms.
+TPathSprite::Create	method	int layer	shared_ptr<TPathSprite>	0x2e0aa	Object size 0xcc.
+TPathSprite::SetCurve	method	TCurveRef, float duration ms, PathMode(ONEWAY0,PAUSE1,LOOP2,BOUNCE3)		0x2de20	
+TPathSprite::SetScaling	method	float yFar,yNear,scaleFar,scaleNear		0x2dd5a	scale = scaleFar + (y-yFar)/(yNear-yFar)*(scaleNear-scaleFar), unclamped.
+TPathSprite::SetSpeed	method	float speedFar,speedNear		0x2dd40	time += delta * lerp(speed) by current sprite y.
+TPathSprite::Update	method	uint delta ms		0x2e0fe	See port-window.md 1.9.
+TCurve::GetPoint	method	float t(0..1 arc length), TVec2* tangent	TVec2	0x1cd46	Cubic Bezier chain (4,7,10,.. points); t<=0 start, t>=1 end.
+SetCurrentFrame	sprite-script-native	int frame0based	nothing	0x75f8c (TAnimatedSprite::SetCurrentFrame)	Registered in each sprite's own Lua state by TAnimatedSprite::NewScript 0x7634a. Accepts > -2.
+WaitLuaNextFrame	sprite-script-native	[number ms]	nothing (yields)	0x75e14	With arg: thread.SetDelay(ms,true,true,false) then lua_yield; with no arg: thread.Pause().
+Die	sprite-script-native	none	nothing	0x78d14	Resets the thread and orphans the script task.
+Pause	sprite-script-native	bool pause, int depth	nothing	0x77318	Pause/resume (resume = SetDelay(1)); recurses into child animated sprites to depth.
+IsPlaying	sprite-script-native	int depth	bool	0x77608	Coroutine active, or any child within depth is.
+Load	sprite-script-native	string xml, string image, string mask	bool	0x76d04 (TAnimatedSprite::Init)	TAnimatedTexture::Get(xml,image,mask); false if it fails.
+GetScript	sprite-script-native	none	string	0x75fe4 (TAnimatedSpriteData::GetScript)	Script text of the current sheet.
+SetAlpha	sprite-script-native	number alpha	nothing	0x75f34	Writes sprite alpha (+0x5c).
+SetLayer	sprite-script-native	int layer	nothing	0x7c036 (TSprite::SetLayer)	Native address inferred from the registration (closure target not fully resolved).
+RemoveSprite	sprite-script-native	none	nothing	0x7791c	Detach from parent. Not called by any embedded Lua function.
+Random	sprite-script-native	number min, number max	number	0x75eac	min + rand() % (max-min); exclusive of max; divide by zero if equal.
+delay	sprite-script-lua	number ms	nothing	animationscript.lua main.0	Sets the framedelay upvalue (initial 16).
+pause	sprite-script-lua	number ms	nothing	main.1	WaitLuaNextFrame(ms).
+showFrame	sprite-script-lua	none	nothing	main.2	WaitLuaNextFrame(framedelay).
+fadeout	sprite-script-lua	number frames	nothing	main.3	alphadelta=-alpha/n; alphacount=n.
+fadein	sprite-script-lua	number frames	nothing	main.4	alphadelta=(1-alpha)/n; alphacount=n.
+setAlpha	sprite-script-lua	number a	nothing	main.5	alpha=a; SetAlpha(a).
+frames	sprite-script-lua	array of 1-based frame numbers	nothing	main.6	For each: apply pending fade step, SetCurrentFrame(f-1), WaitLuaNextFrame(framedelay).
+loop	sprite-script-lua	number times, array frames	nothing	main.7	times x frames(list).
+run	sprite-script-lua	table {xml, image=, mask=, anim='DoAnim'}	nothing	main.8	Load(...) then loadstring(GetScript()..'; '..anim..'()')().
+die	sprite-script-lua	none	nothing	main.9	Die().
+halt	sprite-script-lua	none	nothing	main.10	Pause(true,-1).
+isPlaying	sprite-script-lua	[depth, default -1]	bool	main.11	IsPlaying(depth).
+endReferences	sprite-script-lua	none	nothing	main.12	Empty.
+stop	sprite-script-lua	[depth, default -1]	nothing	main.13	Pause(true, depth).
+random	sprite-script-lua	number min, number max	number	main.14	Random(min,max).

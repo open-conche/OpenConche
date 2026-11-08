@@ -1,0 +1,63 @@
+name	kind	args	returns	address	note
+StartGame	native function (registered by CoffeeFactory ctor)	()	nothing	00015bb8 (ctor 00011e3a)	ResetGame; start a 10 ms window animation; SetGameState(COUNTDOWN); ResumeGame. Registered in the CoffeeFactory constructor, never nil'd by its destructor, so the last constructed factory window (chocolate or coffee) owns the global. Lua: ui/coffee_factory.lua info dialog OK, ui/chocolate_gameover.lua Try again.
+PauseGame	native function (registered by CoffeeFactory ctor)	(string text)	nothing	00011018	Pause: sets cursor cursor/cursor hotspot (1,1); if not already paused: pause sound, show child go, hide child pause, set paused, pause the four scaling tasks and the grid task, StopWindowAnimation, fill sibling window information from ui/game_pause.lua with Lua global gPauseText=text, show it. Always ends with TopModalOnly(false). Lua passes no argument (nil becomes empty string, game_pause.lua then falls back to the string key game_paused). C++ internal callers pass game_paused or coffee_first_missed.
+ResumeGame	native function (registered by CoffeeFactory ctor)	()	nothing	00014c88	Sets cursor cursor/cursor hotspot (16,16). If paused: unpause sound, hide go, show pause, hide information, Restart(15) all five tasks (the argument is ignored by TScalingTask::Restart), restart 10 ms window animation, re-run SetGameState(current state) (in PLAYING this resets the grid task scale to 1 and its time to 0, and replays sound coffee_making_game), clear paused flag. Always ends with TopModalOnly(true).
+GetScore	native function (registered by CoffeeFactory ctor)	()	number	001699f0	Returns the score field (this+0xf4): cases completed plus match bonuses. Called by ui/chocolate_gameover.lua.
+RandomDesign	native function (registered by RecipeDesigner ctor, nil on dtor)	()	nothing	000327a4	See docs/re/ledger-and-game-natives.md 10.3. Delta: ticks at timer 100..1900; tint index sent to Lua is RandRange(1,100) which exceeds the 65-colour palette; SetRecipeTint wraps it.
+SetRecipeType	native function (RecipeDesigner)	(string category)	nothing	00032e32	Scans custom/<category>/ for layerN_MM.png (not _highlight); fills 4 per-layer lists; appends empty entry to layers 2-4 (non-beverage) or 2 and 4 (beverage). Details in ledger-and-game-natives.md 10.3.
+SetLayer	native function (RecipeDesigner)	(number layer0to3, number index)	number	00033418	index is absolute; stored index = (index + size) % size; returns it. Updates option_layerN/option_highlightN (scale 0.5) and display_layerN/display_highlightN (scale 1.0); hides when entry is empty or texture missing.
+GetLayerImage	native function (RecipeDesigner)	(number layer0to3)	string	0003281c	Current entry minus the first 7 characters (custom/). Empty entry gives empty string.
+SetBackground	native function (registered by SignEditor ctor, nil on dtor)	(string name)	nothing	0003795e	Loads logo/<name>, sets it as the Sign base sprite texture. Dereferences the Sign pointer without a null check.
+SetLogo	native function (SignEditor)	(string name)	nothing	00037852	Loads logo/<name> onto the Sign logo child sprite.
+SetFont	native function (SignEditor)	(string name)	nothing	00036d4c	TTextSprite::SetFont(fonts/<name>).
+SetText	native function (SignEditor)	(string text)	nothing	00036df2	TTextSprite::SetText on the sign text sprite. Not the generic window SetText.
+SetAnimScale	native function (registered by TCurveEditor::Init)	(number scale)	nothing	0001e332	Dev curve editor: display scale; recentres background and sprite layer.
+UpdateAnimTime	native function (TCurveEditor)	()	nothing	0001da7e	Reads TextEdit named time as an integer into pathTime; 0 becomes 1.
+UpdateAnimLayer	native function (TCurveEditor)	()	nothing	0001db1e	Reads TextEdit named layer as an integer and applies TSprite::SetLayer to the preview sprite.
+SetAnimSprite	native function (TCurveEditor)	(string name)	nothing	0001e1a0	Loads animated texture ports/animations/<name> onto the preview sprite and remembers the name.
+CoffeeFactory	window type	DSL constructor	window	ctor 00011e3a / Init 000123aa / PostChildrenInit 00015c10	Class CoffeeFactory : TBSGWindow. See md section 1.
+RecipeCreator	window type	DSL constructor	window	ctor 000326cc	Empty TWindow subclass; Init, PostChildrenInit, Draw forward to TWindow; OnMouseMove and OnMouseDown return false. No Lua in either asset tree constructs it.
+RecipeDesigner	window type	DSL constructor	window	ctor 00032b96	TWindow subclass; no Init override (no DSL keys of its own); finds children by fixed names.
+SignEditor	window type	DSL constructor	window	ctor 00037a64 / PostChildrenInit 000387cc	Sign designer; only ui/sign_basic.lua uses it and nothing opens that file.
+CurveEditor	window type	DSL constructor	window	TCurveEditor ctor 0001de2e / Init 0001ed18	Dev tool (dev/dev_animation.lua). Class TCurveEditor.
+warnOnMiss	dsl key (CoffeeFactory)	boolean		Init 000123aa	Pause with text coffee_first_missed after the first miss. Lua: Player.rank <= 2 and product.code == c01.
+matchBonus	dsl key (CoffeeFactory)	table of numbers		Init	Stored as vector with a 0 prepended: bonus[0]=0, bonus[i]=table[i]. Indexed by number of ingredients cleared; counts past the end use the last element. Absent table leaves the vector empty (then back() on an empty vector is undefined; Lua always supplies it for coffee categories).
+countdowntime	dsl key (CoffeeFactory)	ms		Init	default 3000
+gametime	dsl key (CoffeeFactory)	ms		Init	default 60000
+warntime	dsl key (CoffeeFactory)	ms		Init	default 8000; whistle sound when remaining time crosses it
+productName	dsl key (CoffeeFactory)	string		ParseRecipe 00010e38	stored, not otherwise used by native code
+productCode	dsl key (CoffeeFactory)	string		ParseRecipe	stored, not otherwise used
+recipe	dsl key (CoffeeFactory)	array of ingredient names (duplicates allowed)		ParseRecipe	every value converted with AsString into the ProductRecipe vector, in table traversal order
+conveyorpath	dsl key (CoffeeFactory)	array of {x,y}		Init	TCurve control points; Lua beverage default {0,596},{115,455},{250,597},{283,540}. The curve END point is also the gun base and gun sprite position.
+conveyorcount	dsl key (CoffeeFactory)	number		Init	ingredients visible on the belt; default 5; spacing = 1/count
+conveyortime	dsl key (CoffeeFactory)	ms		Init (value feeds IngredientQueueTask)	default 1200; whole-path travel time. Decompiler dropped the call argument; flow inferred from the constructor signature
+colorcount	dsl key (CoffeeFactory)	number		Init	default 1; passed to IngredientQueue; coffee never uses colours
+productpath	dsl key (CoffeeFactory)	array of {x,y}		Init	TCurve for finished cases; start point is where a CoffeeProduct appears, end point is where box_open sprites sit
+producttime	dsl key (CoffeeFactory)	ms		Init	default 3000; time for one case to travel the path
+productspacing	dsl key (CoffeeFactory)	ms		Init	default 1000; divided by producttime in the task constructor to give a path fraction
+appearance	dsl key (CoffeeFactory)	table (see LoadAppearance)		Init	icons for cases (scale 0.5) and the box_open sprite
+top_hood	dsl key (CoffeeFactory)	{x,y}		Init	position of image/conveyor_base_mask_upper (layer 7)
+bottom_hood	dsl key (CoffeeFactory)	{x,y}		Init	position of image/conveyor_base_mask_lower (layer 7)
+speedup	dsl key (CoffeeFactory)	number		Init	default 1.1; grid scale multiplier per match. ui/coffee_factory.lua does NOT pass it, so category speedup (1.2 / 1.15) is never used
+maxspeed	dsl key (CoffeeFactory)	number		Init	default 8; grid scale cap. Not passed by Lua
+columns	dsl key (CoffeeFactory)	number		Init	default 9; Lua passes 6 or 8
+rows	dsl key (CoffeeFactory)	number		Init	default 9; Lua passes 9
+gridx	dsl key (CoffeeFactory)	number		Init	default 10; Lua 146 (6 col) or 103 (8 col)
+gridy	dsl key (CoffeeFactory)	number		Init	default 10; Lua 15
+griddx	dsl key (CoffeeFactory)	number		Init	default 50; Lua 45
+griddy	dsl key (CoffeeFactory)	number		Init	default 50; Lua 45
+gridspeed	dsl key (CoffeeFactory)	ms		Init (value feeds CoffeeGridTask)	default 3000; time for the belt to scroll one row at scale 1. Lua passes category 5000 or 6000 (or product override). Flow inferred from constructor signature
+gunspeed	dsl key (CoffeeFactory)	ms		Init (value feeds CoffeeGunTask)	default 250; time a shot needs to travel 1000 px
+missed	dsl key (CoffeeFactory)	array of {x,y}		Init	positions where missed ingredients are parked; the length is the miss limit (8 in Lua)
+autoFillGunPos	dsl key (CoffeeFactory)	{x,y}		Init	parsed into a local and discarded; CoffeeRefillTask is not constructed. autoFillRate, autoFillCount and categoryName are never read
+x,y,w,h and children	dsl key (generic TWindow)			TWindow::Init	children looked up by name in PostChildrenInit: time (optional TText), countdown (TText), score (TText)
+gPauseText	lua global written by native	string		PauseGame	set via TScript::SetGlobalString before ui/game_pause.lua runs; the script reads it and clears it
+ui/game_pause.lua	lua file executed by native			PauseGame (FillWindowPtr on sibling information)	shows pause text and an OK button that calls ResumeGame
+ui/chocolate_gameover.lua	lua file executed by native			SetGameState(5)	calls GetScore, shows factory_gameover string, Try again = StartGame(), OK = CloseWindow(score)
+DoModal('dev/dev_menu.lua')	lua string executed by native			OnKeyDown 000112a6	run via TWindowManager::DoLuaString on Escape when key flag bit 0 is set
+1002 kSoundEvent	window message	name string		TMessage type 0x3ea	posted globally with name launch (gun) or chocolate_counted (case arrives); consumer maps name to a sound event (inferred)
+1003 kMissedIngredientEvent	window message	IngredientRef		Ingredient::Die 0002730a	sent to child FactoryGame of the top modal; handler MissedIngredient
+1004 kManufactureProductEvent / 1005 kProduceProductEvent	window message			CoffeeFactory::OnMessage	both add a case to the product queue; nothing in the coffee code sends them
+1006 kCountBonusProductEvent	window message			OnMessage	bonusScore++ and score++; not sent by coffee code
+1007 kCountProductEvent	window message			CoffeeProductQueueTask::Animate	score++ per finished case
+1010 kCollectedIngredientEvent	window message	list of IngredientRef		CoffeeIngredientGrid::ClearFrom 00017bee	one message per match; handler applies bonus, speedup, flying-to-hopper

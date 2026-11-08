@@ -1,0 +1,24 @@
+# Sources of the choc3 game module (paths relative to src/games/choc3/).
+choco_game_module(choc3
+  SOURCES
+    GameNatives.cpp
+    CalendarNatives.cpp
+    ContentLoaders.cpp
+    ContentNatives.cpp
+    MapNatives.cpp
+    CratesNatives.cpp
+    FactoryNatives.cpp
+    PortNatives.cpp
+    Choc3Api.cpp
+    Choc3Module.cpp
+    AudioEvents.cpp
+    Particles.cpp
+    factory/Coffee.cpp
+    SlotMachine.cpp
+    HiscoreWindow.cpp
+    factory/RecipeDesigner.cpp
+    PrefsImport.cpp
+    PlayerSave.cpp
+    CharWindow.cpp
+    ImportCommand.cpp
+)

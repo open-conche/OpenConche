@@ -1,0 +1,34 @@
+OpenConche @PROJECT_VERSION@
+============================
+
+An open source, modern, cross-platform engine for Chocolatier, Chocolatier 2:
+Secret Ingredients and Chocolatier 3: Decadence by Design, running the games
+natively on current systems.
+
+The games' art is 800x600 and is still scaled up, but the engine renders at your
+screen's native resolution, so text stays sharp at any window size and in
+fullscreen.
+
+OpenConche is only the engine: it runs the games' own shipped scripts and assets,
+and none of them are included here. You need your own installed copy of a game.
+
+Running
+-------
+@CHOCO_DIST_RUN@
+
+Started without arguments, the engine looks for installed games and otherwise
+shows a launcher where you point it at a game folder: the Windows game's
+"assets" folder, or the Mac game's Contents/Resources/assets. The choice is
+remembered. --help lists every option.
+
+Settings and saves
+------------------
+Kept per game in your user folder (Application Support on macOS, %APPDATA% on
+Windows, $XDG_DATA_HOME on Linux). The original game's prefs.dat can be
+imported from a copy: see --help, --import-prefs.
+
+Licence
+-------
+The engine is MIT (LICENSE.txt). The libraries built into it are listed with
+their licences in THIRD_PARTY.txt. The games remain the property of their
+owners.

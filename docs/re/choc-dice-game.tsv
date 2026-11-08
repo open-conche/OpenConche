@@ -1,0 +1,30 @@
+kind	name	value	source	status
+native_c1	RollDice(string wager)	final[i]=rand()%6 for i=0..3; elapsed=0; roll sound; repeating 62 ms task	00408a30 (thunk 00408f30)	fact
+native_c1	StopDie()	if remaining>0: redraw once, elapsed=(N-(remaining-1))*750+1938	004089e0 (thunk 00408f80)	fact
+const_c1	tick	62 ms (0x3e) repeating	00408a30	fact
+const_c1	spin	all dice random while elapsed <= 2000	00408b40	fact
+const_c1	stagger	remaining=N-(elapsed-2000)/750; one die stops every 750 ms (die4, die3, die2, die1)	00408b40	fact
+const_c1	total_duration	5022 ms (81 ticks) with no Stop	derived	fact
+const_c1	die_stop_ticks	2790, 3534, 4278, 5022 ms	derived	fact
+const_c1	rand_draws	4 in RollDice; 4 per tick (stopped dice discarded); 4 per StopDie	00408a30, 00408910	fact
+const_c1	face_mapping	value v (0..5) shows image/die<v+1> (50x50)	00408fa0	fact
+const_c1	win_test	final[0]+final[1] (die1,die2: player) > final[2]+final[3] (die3,die4: character) wins; equal is a tie	00408b40	fact
+const_c1	payout	win: gSim:AdjustMoney(<w>,'dice_logwin'); loss: gSim:AdjustMoney(-<w>,'dice_logloss'); tie none; run with DoString after the result sound	00408b40; 0043b220	fact
+sound_c1	dice_game_roll.ogg	at RollDice, stopped at the end	+0x34	fact
+sound_c1	dice_game_win.ogg / dice_game_lose.ogg / dice_game_tie.ogg	at the end	+0x3c / +0x44 / +0x4c	fact
+lua_c1	PlayDice eligibility	gSim.rank >= 1 and gSim.money >= 500	sim/character.lua main.16	fact
+lua_c1	PlayDice wager	w=Floor(bsutil.random(M/10,M*3/4)/100)*100; w<100->100; elseif w>250000->250000; elseif Floor(M*0.2)<w -> Floor(M*0.2); then Floor(w/100)*100	sim/character.lua main.16	fact
+lua_c1	dice window	Window dice x=101 y=10 w=597 h=346; DiceGame children die1..die4 (die4 392,165; die3 447,165; die2 392,223; die1 447,223)	sim/character.lua	fact (computed)
+lua_c1	characters	gambler, trickster have action=PlayDice	data/travelers.lua	fact
+lua_c2	PlayDice gate	gSim.money>5000 and (gSim.rank>=4 or gSim.weeks-gSim.gamble>1); yes -> gSim.gamble=weeks	sim/character_actions.lua	fact (Lua)
+lua_c2	bet limits	minBet=ante=round100(Floor(M*0.01)) in [100,1e6]; maxBet=Floor(M*0.2) (M*0.5 if < minBet), cap 1e6, >=minBet, equal->2*minBet; delta=round100((max-min)/10); max=min+10*delta; clamp to M/2 floor100	ui/gamble_dice.lua	fact (Lua)
+lua_c2	first roll	gDiceRollCount=0; AdjustMoney(-ante); RollFirst(); wait Pause(50) until count>=2	ui/gamble_dice.lua main.3	fact (Lua)
+lua_c2	second roll	RollSecond(); wait until count>=8; stake=bet-ante	ui/gamble_dice.lua main.4	fact (Lua)
+lua_c2	payout	loss: AdjustMoney(-(bet-ante)); win: AdjustMoney(ante+bet); tie: none (ante lost); net -bet / +bet / -ante	ui/gamble_dice.lua main.4	fact (Lua)
+native_c2	RollFirst / RollSecond / StopOne / PlayerTotal / CharacterTotal / gDiceRollCount	bodies not decoded (exe packed); semantics inferred from the Lua		unknown
+asset_c2	die1..die6.png, die_unknown.png	50x50		fact
+asset_c2	sfx/roll_dice.ogg, dice_win.ogg, dice_lose.ogg	no tie sound		fact
+bonus_c2	grid	25 crates select_1..25; x=((i-1) mod 5)*60+60, y=floor((i-1)/5)*60+120; 50x47	ui/gamble_bonus.lua	fact (Lua)
+bonus_c3	grid	21 crates; x=((i-1) mod 7)*60+226, y=floor((i-1)/7)*55+95; 50x47	choco_assets/ui/ui_crates.lua	fact
+bonus	money flow	AcceptBet: AdjustMoney(-bet); Done: AdjustMoney(winnings) unless winnings==0 or winnings==bet (tie loses the bet in both c2 and c3)	gamble_bonus.lua main.6	fact (Lua)
+bonus_c2	assets	icon_crate/open/front 50x47; large_crate/open/front 100x94; whammy_devil 128x128	image/	fact

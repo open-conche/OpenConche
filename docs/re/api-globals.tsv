@@ -1,0 +1,214 @@
+name	kind	args	returns	source address	note
+Date	function	number weeks	string	000032a4	Formats a game-week count as a date via string-table key date_format (args: month name from month_N, day, year). days=weeks*7+171; year=1946+days/365 (365-day years, no leap days in the year count); month by walking _daysPerMonth; Feb length picked by a leap test on the year OFFSET (days/365), not the printed year. Reforged ui/helpers.lua redefines Date in Lua, so the native one is shadowed there. | reforged: not used by Reforged (or defined there)
+DayOfYear	function	number weeks	number	00004dc4	(uint)(weeks*7) mod 365 (no +171 offset). Negative clamps to 0. | reforged: not used by Reforged (or defined there)
+Dollars	function	number	string	00003680	"Rounds with %.0f, inserts _NUMERIC_SEPARATOR every 3 digits, prefixes _MONEY_SIGN, leading - for negatives. |x|<0.5 returns literal ""$0"". Separator and sign are engine globals set by locale (values not determined). | reforged: 135 uses; dev/dev_money.lua;dev/dev_order_detail.lua;dev/dev_quests_content.lua;sim/building.lua..."
+Mod	function	number a, number b	number	000031bc	Unsigned integer remainder: both args clamped to [0,4294967295] and truncated to uint, returns a%b (disassembly shows divl then edx; the Ghidra C shows / wrongly). Negative -> 0. b==0 would be a hardware divide fault (no guard). Reforged files define a local Mod so rarely hit. | reforged: not used by Reforged (or defined there)
+RandRange	function	number lo, number hi	number	0000317c	Inclusive random integer: lo + (int)((hi-lo+1)*RandDouble()) using the global randomizer _GlobalRandomizer. Args truncated to int. | reforged: 104 uses; dev/dev_order_detail.lua;dev/dev_tips.lua;sim/building.lua;sim/character.lua...
+Floor	function	number	number	00003290	C floor(). | reforged: 170 uses; community/api.lua;community/cloud.lua;community/creation.lua;community/hub.lua...
+Pow	function	number x, number y	number	0000329a	C pow(). | reforged: 1 uses; sim/port.lua
+CurrentTime	function	(none)	number	00004338	TPlatform::Timer() as unsigned int; milliseconds since process start, clamped to [0,4294967295], same as GetTimer. | reforged: 8 uses; community/cloud.lua;sim/player.lua
+SetLayeredLabel	function	string windowName, string text	(none)	0000434e	Finds named TLayeredWindow under the top modal window; for layers 0..3 sets that layer current and calls SetText on child label<N> if present; restores the original layer. Missing window: no-op. | reforged: 1 uses; ui/ui_questlog.lua
+SetAlpha	function	string windowName, number alpha0to255	(none)	000042be	Looks up a child by name from the root window (WindowManager+0xc, recursive depth -1) and sets alpha=value/255. Missing: no-op. Not used by Reforged. | reforged: not used by Reforged (or defined there)
+FillWindow	function	string windowName, string image	(none)	00004984	Looks up child from the root window and calls FillWindowPtr(window,image). Missing window: no-op. | reforged: 45 uses; dev/dev_quests.lua;ui/catalogue_character_detail.lua;ui/catalogue_character_list.lua;ui/catalogue_detail_common.lua...
+SetWindowPos	function	string windowName, number x, number y	(none)	00004a0e	Child lookup from root; TWindow::SetWindowPos((int)x,(int)y). Not used by Reforged. | reforged: not used by Reforged (or defined there)
+Transition	function	table t	(none)	000394ee	Animated window transition. t[1]=type: center_fadein | center | fadein | fadeout | swipe | path | zoomin; t.window=child name looked up under the top modal window (missing -> returns, onend NOT called). Fields: time (ms, default 100, clamped to uint), onend (Lua function), alpha (default 1; fadein/fadeout/center_fadein), startx/starty/endx/endy (swipe, default = window pos), path (table for TCurve; if curve creation fails nothing starts but onend is released, not called). center: sets window x=(rootW-winW)/2 keeping y. fadein sets alpha 0 first; center_fadein also hides the window first. Unknown type: onend released, never called. Reforged wraps it (ui/helpers.lua DoTransition etc). | reforged: 6 uses; sim/building.lua;ui/helpers.lua
+SetMood	function	string characterName, number mood	(none)	00007866	Character::SetCharacterMood: for every visible Character whose name equals arg1, calls SetMood(mood). | reforged: 2 uses; sim/character.lua
+GrabLedger	function	(none)	(none)	0002901a	LedgerWindow::Grab: creates the singleton ledger on first use (runs ui/ledger.lua, FitToChildren, 50ms anim task) else detaches it from its parent; then adds it to the top modal window and sets depth 1. | reforged: 2 uses; ui/mapview.lua;ui/portview.lua
+ReleaseLedger	function	(none)	(none)	0002784e	LedgerWindow::Release: detaches singleton from its parent if exists (registered in ChocoThreeMain as PTR_Release). | reforged: 5 uses; dev/dev_buildings.lua;dev/dev_ports.lua;sim/port.lua;ui/mapview.lua...
+RealUpdateLedger	function	string what, string arg2	(none)	000278a0 (ctor 00028e54)	"LedgerWindow::UpdateLedger(param,param): reads Player.rank, handles ""newplayer""/""all""/""time""... update modes. Full mode list not decoded. Reforged ui calls it via LedgerUpdateDisplay wrapper. | reforged: 2 uses; ui/helpers.lua"
+SetLedgerQuestIndicator	function	string mode	(none)	0002887c	"Sets image on child ledger_questgoals: ""on"", ""flash"" (complete badge image/badge_button_indicator_complete, plays sound quest_requirements_met once, 1500ms), else off. Other modes not decoded. | reforged: 2 uses; ui/helpers.lua"
+AnimateProduction	function	(none)	(none)	LedgerWindow ctor 00028e54	LedgerWindow::AnimateProduction; body not read. | reforged: 1 uses; sim/sim.lua
+PausePortAnimations	function	bool pause	(none)	0002ec2a	PortWindow member: stores flag and pauses/resumes port sprite animations. Registered from PortWindow::Init (0002f47e) so only after a PortWindow is initialised. | reforged: 2 uses; sim/product.lua
+InitiateTravel	function	table t	(none)	0002b31c	MapWindow member. t.path (curve) or t.dest{mapx,mapy}; starts TravelTask on the map. No-op if a travel is already active (this+0x6c != 0). Other fields not decoded. | reforged: 1 uses; sim/port.lua
+PauseTravel	function	(none)	(none)	MapWindow ctor 0002a914	MapWindow member; pauses travel task. | reforged: 16 uses; dev/dev_buildings.lua;sim/port.lua;ui/ledger.lua;ui/ui_pause.lua
+ResumeTravel	function	(none)	(none)	MapWindow ctor 0002a914	MapWindow member; resumes travel task. | reforged: 16 uses; sim/port.lua;ui/ledger.lua;ui/ui_pause.lua
+SoundEvent	function	string key	(none)	00005166 (registered by BSGSoundInit 0000500a)	"""ui_click"" plays cadi/ui_click.ogg (cached under key ui_click). Keys containing ""firework"" go to _CadiEvent(key,0,0) (procedural CADI sound). Otherwise loads sfx/<key>.ogg via TSound::Get(path,1,1000), caches by key, plays. Missing file: silent, nothing raised. Registered only after BSGSoundInit during ChocoThreeMain. | reforged: 75 uses; dev/dev_buildings.lua;dev/dev_ports.lua;sim/building.lua;sim/player.lua..."
+LoadGameString	function	(none)	string	00004aa4	"Prefs str ""savegame"" for current user; """" if no current user (-1). | reforged: 1 uses; sim/player.lua"
+SaveGameString	function	string	(none)	00003a36	"Sets prefs ""savegame"" for current user (written, flush flag 1); no-op if no user. | reforged: 1 uses; sim/player.lua"
+WriteToFile	function	string name, string data	(none)	00003de0	"Prefixes name with ""user:"" (virtual user dir) and writes data with TFile open mode 3. No error reporting. | reforged: 9 uses; community/account.lua;community/identity.lua;community/ownership.lua;community/transport.lua..."
+ReadFromFile	function	string name	string	00003ede	"Prefixes ""user:"", opens mode 1, reads in 1024-byte chunks until EOF, returns concatenation; nonexistent file presumably returns """" (open failure behaviour not verified). | reforged: 7 uses; community/account.lua;community/identity.lua;community/ownership.lua;community/transport.lua..."
+NextSaveFileName	function	(none)	string	000040a2	"Iterator over the user: directory: each call advances TFile::GetNextFile; returns the next file name ending in "".choco3"" with that 7-char extension stripped (inferred from substr); returns """" when exhausted and resets iteration. | reforged: 2 uses; dev/dev_saves.lua"
+CheckConfig	function	string key	bool	00003b24	"""local""->IsEnabled(hiscorelocal), ""anonymous""->IsEnabled(hiscoreanon), ""firstpeek""->IsEnabled(kFirstPeek), ""xsell""-> file xsell/xsell.lua exists, ""dev""-> IsEnabled(cheatmode); anything else false (so debug/cheat/console/debug_objects keys in Reforged are always false). IsEnabled = GetConfig(key,"""") converted by to_int != 0. | reforged: 12 uses; dev/dev_menu.lua;sim/player.lua;ui/catalogue_character_detail.lua;ui/catalogue_ingredient_detail.lua..."
+LogScore	function	number score, string a, string b	(none)	00003ad6	TPfHiscores::LogScore(score, true, a, b) on the settings hiscores object; the arguments are passed in order, and the score is truncated to int. | reforged: 1 uses; sim/player.lua
+ToggleFullScreen	function	(none)	bool	00035928	Toggle via TPlatform::SetFullscreen; on success stores prefs fullscreen=1/0 and returns true; false on failure. | reforged: 1 uses; ui/ui_options.lua
+ToggleSoundMute	function	(none)	(none)	00035a1e	Flips per-user prefs soundoff, sets game-state kMute, calls BSGSoundMute(QueryMuteGame). | reforged: 1 uses; ui/ui_options.lua
+SaveVolumes	function	(none)	(none)	0002d678	TOptions member (registered when OptionsWindow constructed); reads the option sliders and stores soundlevel/musiclevel/ambientlevel prefs. Details not decoded. | reforged: 1 uses; ui/ui_options.lua
+SetCurrentGameMode	function	number mode	(none)	00035b6e	Only acts when mode==0: stores 0, sets hiscore property 2 to the game-mode name. | reforged: 5 uses; sim/player.lua
+GetNumUsers	function	(none)	number	00035e0e	TPrefs::GetNumUsers. | reforged: 24 uses; community/cloud.lua;community/local_scores.lua;sim/player.lua;ui/community_cloud_saves.lua...
+CreateNewUser	function	string name	(none)	000361dc	New user index = current count (0-based). Stores name, copies sound/music/ambient/soundoff prefs from the current user, then makes it current. No duplicate check (use IsNameInUse). | reforged: 5 uses; community/cloud.lua;community/local_scores.lua;ui/mainmenu.lua;ui/ui_changeplayer.lua
+SetCurrentUser	function	number index	(none)	000360ec	Ignored if index >= user count. Stores prefs curuser, sets hiscore property 1 to the user name, applies that user sound levels. -1 allowed (no user). | reforged: 9 uses; community/cloud.lua;community/local_scores.lua;ui/ui_changeplayer.lua
+ChangeCurrentUserName	function	string	(none)	00035bd8	Sets prefs name for the current user (index defaulting to 0 if curuser unset). | reforged: 6 uses; community/local_scores.lua;ui/ui_changeplayer.lua
+DeleteUser	function	number index	(none)	00036aea	Deletes via TPrefs then selects index-1 (or last user if that is <0). | reforged: 5 uses; community/cloud.lua;community/local_scores.lua;ui/ui_changeplayer.lua
+IsNameInUse	function	string	bool	00036b2c	Exact (case-sensitive) comparison against every stored user name. | reforged: 1 uses; ui/ui_entername.lua
+QuitToMainMenu	function	(none)	(none)	0003606c	Pops modal windows from the top while the top has a parent-less condition (loop stops at first top modal whose +4 field is null); details approximate. | reforged: not used by Reforged (or defined there)
+GetCurrentUser	function	(none)	number	000357f8	prefs curuser, default -1. | reforged: 6 uses; community/cloud.lua;sim/player.lua;ui/ui_changeplayer.lua
+GetCurrentUserName	function	(none)	string	00035ca6	"prefs name of current user ("""" default). | reforged: 17 uses; community/cloud.lua;community/local_scores.lua;sim/player.lua;ui/mainmenu.lua..."
+GetUserName	function	number index	string	00035d7c	"prefs name for index ("""" default). | reforged: 7 uses; community/cloud.lua;community/local_scores.lua;ui/ui_changeplayer.lua"
+bsgLoadStringFile	function	string path	(none)	000060aa	BSGStringTable::LoadStringFile on singleton. Not used by Reforged. | reforged: not used by Reforged (or defined there)
+bsgStringExists	function	string key	bool	00006316	BSGStringTable::StringExists. | reforged: not used by Reforged (or defined there)
+bsgGetString	function	string key	string	00005ccc	BSGStringTable::GetString. | reforged: not used by Reforged (or defined there)
+GetState	function	(none)	number	0016e87c	NAME COLLISION: THiscore::GetState (registered when HiscoreWindow ctor runs, 0002339e) returns its state field; TGameState also registers a GetState at 00073e60. Last constructed wins. | reforged: 7 uses; ui/hiscore.lua
+ScoreAvailable	function	(none)	bool	00022e38	THiscore: TPfHiscores::GetUserBestScore(0,...) result. | reforged: 1 uses; ui/hiscore.lua
+UpdateText	function	(none)	(none)	000247ea	THiscore: refreshes score table text. | reforged: not used by Reforged (or defined there)
+LaunchPrivacyPolicy	function	(none)	(none)	00022e78	Opens http://www.playfirst.com/privacypolicy.html in the browser. | reforged: not used by Reforged (or defined there)
+SubmissionDone	function	bool success	(none)	000253ec	THiscore: sets state=1, requests category info, records result, refreshes text and buttons. | reforged: 2 uses; ui/hiscore.lua
+SubmitToServer	function	string user, string pass/acct, string x, bool, bool	(none)	000354ce	TServerSubmit (registered in its ctor 00035084). Arg roles inferred: if arg3 empty, stores arg2... (anonymous path: saves prefs _anonusername=arg1 and submits anonymously); else submits with arg3/arg2. Then switches to waiting mode and starts a 20-step window animation. Needs the original PlayFirst server, so a stub should just call SubmissionDone-equivalent message. | reforged: 1 uses; ui/serversubmit.lua
+GetLuaServerSubmitSetupVars	function	bool medalsMode	string (Lua source)	00035168 (registered by TServerSubmit::Register)	Returns a Lua statement string to be executed: gNameEdit='<_anonusername pref>'; then gAccountEdit/gPassEdit/gRemember (remembered login or empty/false), then gMedalsMode=true; or gMedalsMode=false;gEligibleScore=<best score>. Explains gNameEdit/gEligibleScore/gMedalsMode in the tsv. | reforged: 1 uses; ui/hiscore.lua
+GetScore	function	(none)	number	ChocolateFactory ctor 00008ea8 / CoffeeFactory ctor 00011e3a	Factory mini-game score so far (unsigned). Registered by whichever factory window was constructed last. | reforged: 1 uses; ui/chocolate_gameover.lua
+LoadPortFileList	function	table out	(none)	0016cc20	"Reads all ports.xml files (found across asset dirs via BuildFileList sorted), for each <port> child takes <name> child or its own content, strips "".lua"", tries ""<dir>/<name>.lua"" then ""<dir>.lua""; if the file exists appends the path to out (1-based). | reforged: 1 uses; sim/port.lua"
+LoadQuestFileList	function	table out	(none)	0016cb9c	Same with quests.xml and <file> children. | reforged: 2 uses; sim/player.lua;sim/quest.lua
+LoadIngredients	function	(none)	(none)	0016cd0c	Reads every ingredients.xml; each <ingredient> becomes a Lua call CreateIngredient {tag=value,...} (SimpleXmlToLua: leaf text always quoted as string, nested elements become sub-tables); registers asset key items/<child>. | reforged: 1 uses; ui/mainloop.lua
+LoadProducts	function	(none)	(none)	0016ccbc	Each <product> in products.xml -> Lua call CreateProductFromXML {...}. | reforged: 1 uses; ui/mainloop.lua
+StartGame	function	(none)	(none)	ChocolateFactory ctor 00008ea8 / CoffeeFactory ctor 00011e3a	Starts the factory mini-game of the last-constructed factory window. | reforged: 3 uses; ui/chocolate_factory.lua;ui/chocolate_gameover.lua;ui/coffee_factory.lua
+PauseGame	function	string	(none)	same	Pauses; string argument semantic not decoded. | reforged: 2 uses; ui/chocolate_factory.lua;ui/coffee_factory.lua
+ResumeGame	function	(none)	(none)	same	Resumes. | reforged: 3 uses; ui/chocolate_factory.lua;ui/coffee_factory.lua;ui/game_pause.lua
+PrepareGame	function	number	number	0003cdc6	TBonusGame (Crates): computes per-crate prize amounts from the _PrizeFactor table scaled by arg, rounded to hundreds (min 100 if factor>0), shuffles with rand(); returns total/uint (exact value not decoded). | reforged: 1 uses; ui/ui_crates.lua
+SelectPrize	function	number index, bool	number	0003cfea	TBonusGame::Select: reveals crate index; plays crate_click; whammy_devil image and crate_no_money if the crate holds the bomb. | reforged: 2 uses; ui/ui_crates.lua
+StartSlots	function	number,number,number,number, number speed	(none)	00039f16	SlotMachine::StartMachine: starts the four wheels on symbols 1-4 args and stores speed, 50ms animation. | reforged: 1 uses; ui/ui_slotmachine.lua
+StopSlots	function	(none)	(none)	SlotMachine ctor 0003af00	SlotMachine::StopOne: stops next wheel. | reforged: not used by Reforged (or defined there)
+StartFireworks	function	(none)	(none)	TFireworksWindow ctor 0003e7c2	Starts fireworks. | reforged: 1 uses; ui/ui_medals.lua
+StopFireworks	function	(none)	(none)	same	Stops fireworks. | reforged: not used by Reforged (or defined there)
+RandomDesign	function	(none)	(none)	RecipeDesigner ctor 00032b96	RecipeDesigner member. | reforged: 2 uses; ui/ui_kitchen.lua
+SetRecipeType	function	string	(none)	same	RecipeDesigner member. | reforged: 2 uses; ui/ui_kitchen.lua
+SetLayer	function	number layer, number value	number	same	RecipeDesigner::SetLayer(int,int)->int. | reforged: 5 uses; ui/ui_kitchen.lua
+GetLayerImage	function	number layer	string	same	RecipeDesigner member. | reforged: 2 uses; ui/ui_kitchen.lua
+SetBackground	function	string	(none)	SignEditor ctor 00037a64	SignEditor member. | reforged: 2 uses; ui/sign_basic.lua
+SetLogo	function	string	(none)	same	SignEditor member. | reforged: 2 uses; ui/sign_basic.lua
+SetFont	function	string	(none)	same	SignEditor member. | reforged: 2 uses; ui/sign_basic.lua
+SetText	function	string	(none)	same	SignEditor member (NOT the window SetText). | reforged: 1 uses; ui/sign_basic.lua
+SetAnimScale	function	number	(none)	TCurveEditor::Init 0001ed18	Dev curve editor. | reforged: not used by Reforged (or defined there)
+UpdateAnimTime	function	(none)	(none)	same	Dev curve editor. | reforged: 2 uses; dev/dev_animation.lua
+UpdateAnimLayer	function	(none)	(none)	same	Dev curve editor. | reforged: 1 uses; dev/dev_animation.lua
+SetAnimSprite	function	string	(none)	same	Dev curve editor. | reforged: 1 uses; dev/dev_animation.lua
+BTSetTint	function	string windowName, table color	(none)	0003b8b6 (ctor 0003b672)	SetBitmapTint free function. | reforged: 2 uses; ui/ui_kitchen.lua
+BTSetOffset	function	string windowName, number x, number y	(none)	TBitmapTint ctor 0003b672	SetBitmapOffset. | reforged: not used by Reforged (or defined there)
+BTSetFlip	function	string windowName, bool	(none)	same	SetBitmapFlip. | reforged: not used by Reforged (or defined there)
+SetRectangleColor	function	string windowName, table color	(none)	0003c926 (TRectangle ctor 0003c7a2)	Sets the colour of a Rectangle window. | reforged: 1 uses; ui/ui_kitchen.lua
+DebugOut	function	string	(none)	TScript::LuaInit 00079e50 -> LuaDebugOut 00079c2c	Registered through LPCD with one str; LuaDebugOut body is 5 bytes (no-op) in the shipped build. Extra Lua args ignored. | reforged: not used by Reforged (or defined there)
+DumpTable	function	table	(none)	TScript::LuaInit prelude string	Lua source in the binary: recursive dump via DebugOut (no visible effect). | reforged: not used by Reforged (or defined there)
+toparams	function	table	values (t[1]..t[n])	0007b300	unpack(t): pushes t[1]..t[n] with n = lua_getn(t) and returns n. | reforged: not used by Reforged (or defined there)
+_ALERT	function	string	(none)	00079bf2	Writes "Lua error: <msg>" + newline to std::cerr via WriteDbg; returns nothing. Used as the errfunc of the engine pcalls. | reforged: not used by Reforged (or defined there)
+_SetState	function	?	?	TGameState ctor 00073e60	Registered free function; TGameState::SetState wrapper (Lua pause/mute states keyed by kPause/kMute etc). | reforged: not used by Reforged (or defined there)
+QueryMuteGame	function	(none)	bool	TGameState ctor	TGameState member. | reforged: not used by Reforged (or defined there)
+QueryRestartMode	function	(none)	bool	TGameState ctor	TGameState member. | reforged: not used by Reforged (or defined there)
+QueryJumpToMenu	function	(none)	bool	TGameState ctor	TGameState member. | reforged: not used by Reforged (or defined there)
+kScreenWidth	constant		800	0001001c	SetGlobalNumber double 0x40890000
+kScreenHeight	constant		600	0001001c	0x4082c000
+kGameWidth	constant		800	0001001c	
+kGameHeight	constant		600	0001001c	
+kGameScale	constant		1	0001001c	
+gVersionString	constant		"""ver "" + config kGameVersion value"	0001001c	string
+kHAlignLeft	constant		0	ScreenInit.lua	
+kHAlignCenter	constant		1	ScreenInit.lua	
+kHAlignRight	constant		2	ScreenInit.lua	
+kVAlignTop	constant		0	ScreenInit.lua	
+kVAlignCenter	constant		4	ScreenInit.lua	
+kVAlignBottom	constant		8	ScreenInit.lua	
+kPush	constant		0	ScreenInit.lua	
+kToggle	constant		1	ScreenInit.lua	
+kRadio	constant		2	ScreenInit.lua	
+kAllLayers	constant		-1	ScreenInit.lua	
+kCenter	constant		80000	ScreenInit.lua	
+kMax	constant		160000	ScreenInit.lua	
+kDefault	constant		128	ScreenInit.lua	
+kPushButtonAlignment	constant		kHAlignCenter + <unresolved global>; inferred 5 (=Center+VCenter)	ScreenInit.lua	
+kRadioButtonAlignment	constant		kHAlignLeft + <unresolved>; inferred 4	ScreenInit.lua	
+kToggleButtonAlignment	constant		kHAlignCenter + <unresolved>; inferred 5	ScreenInit.lua	
+kGeneric	constant		0	ScreenInit.lua	
+kCloseWindow	constant		1	ScreenInit.lua	
+kDefaultAction	constant		2	ScreenInit.lua	
+kButtonPress	constant		3	ScreenInit.lua	
+kPressAnyKey	constant		4	ScreenInit.lua	
+kQuitNow	constant		5	ScreenInit.lua	
+kModalClosed	constant		6	ScreenInit.lua	
+kTextEditChanged	constant		7	ScreenInit.lua	
+kCommandOnly	constant		8	ScreenInit.lua	
+kSliderValChanged	constant		9	ScreenInit.lua	
+kSliderMouseUp	constant		10	ScreenInit.lua	
+kSliderPageUp	constant		11	ScreenInit.lua	
+kSliderPageDown	constant		12	ScreenInit.lua	
+kUserMessageBase	constant		1000	ScreenInit.lua	
+kCmdLine	constant		"""cmdline"""	ScreenInit.lua	
+kLevel	constant		"""level"""	ScreenInit.lua	
+kSubLevel	constant		"""sublevel"""	ScreenInit.lua	
+kPause	constant		"""pause"""	ScreenInit.lua	
+kMute	constant		"""mute"""	ScreenInit.lua	
+kBreakNow	constant		"""breaknow"""	ScreenInit.lua	
+kScore	constant		"""score"""	ScreenInit.lua	
+kGameMode	constant		"""gamemode"""	ScreenInit.lua	
+kGameOver	constant		"""gameover"""	ScreenInit.lua	
+kNoMoreContent	constant		"""nomorecontent"""	ScreenInit.lua	
+kDownloadButton	constant		"""downloadbutton"""	ScreenInit.lua	
+kUpsellFrequency	constant		"""upsellfrequency"""	ScreenInit.lua	
+kRestartButton	constant		"""restartbutton"""	ScreenInit.lua	
+kSystemMode	constant		"""systemmode"""	ScreenInit.lua	
+kMaxLevel	constant		"""maxlevel"""	ScreenInit.lua	
+kCheatMode	constant		"""cheatmode"""	ScreenInit.lua	
+kComputerId	constant		"""computerid"""	ScreenInit.lua	
+kInstallKey	constant		"""installkey"""	ScreenInit.lua	
+kGameName	constant		"""gamename"""	ScreenInit.lua	
+kGameVersion	constant		"""version"""	ScreenInit.lua	
+kEncryptionKey	constant		"""encryptionkey"""	ScreenInit.lua	
+kHiscoreLocalOnly	constant		"""hiscorelocal"""	ScreenInit.lua	
+kHiscoreAnonymous	constant		"""hiscoreanon"""	ScreenInit.lua	
+gReturnValue	constant		nil	ScreenInit.lua	
+gCurID	constant		100	ScreenInit.lua	
+gBeginGroup	constant		0	ScreenInit.lua	
+idtable	object		table	ScreenInit.lua	global table
+gParent	object		table	ScreenInit.lua	global table
+gCurrentDefaultStyle	object		table	ScreenInit.lua	global table
+gClosedWindows	object		table	ScreenInit.lua	global table
+gCommandQueue	object		table	ScreenInit.lua	global table
+gMessageQueue	object		table	ScreenInit.lua	global table
+gDialogTable	object		table	ScreenInit.lua	global table
+kBlendNormal	constant		0	particles.lua	
+kBlendOpaque	constant		1	particles.lua	
+kBlendAdditiveAlpha	constant		2	particles.lua	
+kBlendSubtractive	constant		3	particles.lua	
+kBlendMultiplicative	constant		4	particles.lua	
+kBlendMode	constant		"""blendmode"""	particles.lua	
+Color	function	r,g,b[,a] ints 0-255 -> {r/255,g/255,b/255,a/255 or 1}		ScreenInit.lua	Lua closure, bytecode only | reforged: 516 uses; community/render.lua;dev/dev_buildings.lua;dev/dev_quests.lua;dev/dev_quests_content.lua...
+FColor	function	r,g,b[,a] floats -> {r,g,b,a or 1}		ScreenInit.lua	Lua closure, bytecode only | reforged: not used by Reforged (or defined there)
+Push	function	value		ScreenInit.lua	Lua closure, bytecode only | reforged: not used by Reforged (or defined there)
+Pop	function			ScreenInit.lua	Lua closure, bytecode only | reforged: not used by Reforged (or defined there)
+DoWindow	function	table		ScreenInit.lua	Lua closure, bytecode only | reforged: 10 uses; ui/catalogue_history_list.lua;ui/style.lua
+DoDialogCommand	function	a,b		ScreenInit.lua	Lua closure, bytecode only | reforged: not used by Reforged (or defined there)
+MakeDialog	function	table		ScreenInit.lua	Lua closure, bytecode only | reforged: 128 uses; dev/dev_animation.lua;dev/dev_buildings.lua;dev/dev_console.lua;dev/dev_enter_amount.lua...
+Creating	function	a,b		ScreenInit.lua	Lua closure, bytecode only | reforged: not used by Reforged (or defined there)
+SetBeginGroup	function	v		ScreenInit.lua	Lua closure, bytecode only | reforged: not used by Reforged (or defined there)
+BeginGroup	function			ScreenInit.lua	Lua closure, bytecode only | reforged: 16 uses; ui/catalogue_history_list.lua;ui/community_account_auth.lua;ui/community_cookbook.lua;ui/community_creation_details.lua...
+GetTag	function	a,...		ScreenInit.lua	Lua closure, bytecode only | reforged: 60 uses; ui/catalogue_history_list.lua;ui/style.lua
+SetDefaultStyle	function	t		ScreenInit.lua	Lua closure, bytecode only | reforged: 1 uses; ui/style.lua
+SetStyle	function	t		ScreenInit.lua	Lua closure, bytecode only | reforged: 199 uses; dev/dev_animation.lua;dev/dev_buildings.lua;dev/dev_console.lua;dev/dev_enter_amount.lua...
+AppendStyle	function	t		ScreenInit.lua	Lua closure, bytecode only | reforged: 41 uses; dev/dev_animation.lua;sim/ingredient.lua;sim/product.lua;ui/catalogue_history_list.lua...
+SetFocus	function	name		ScreenInit.lua	Lua closure, bytecode only | reforged: 10 uses; dev/dev_enter_amount.lua;ui/community_account_auth.lua;ui/community_profile.lua;ui/serversubmit.lua...
+SetDefault	function	a		ScreenInit.lua	Lua closure, bytecode only | reforged: not used by Reforged (or defined there)
+DistributeX	function	t		ScreenInit.lua	Lua closure, bytecode only | reforged: not used by Reforged (or defined there)
+DistributeY	function	t		ScreenInit.lua	Lua closure, bytecode only | reforged: not used by Reforged (or defined there)
+WaitForCloseMessage	function	a		ScreenInit.lua	Lua closure, bytecode only | reforged: not used by Reforged (or defined there)
+DoModal	function	script		ScreenInit.lua	Lua closure, bytecode only | reforged: 6 uses; dev/dev_utils.lua;ui/hiscore.lua;ui/mainmenu.lua;ui/ui_options.lua
+DoMainWindow	function	script		ScreenInit.lua	Lua closure, bytecode only | reforged: 1 uses; ui/mainloop.lua
+ModalReturn	function	v		ScreenInit.lua	Lua closure, bytecode only | reforged: not used by Reforged (or defined there)
+DisplaySplash	function	a,b,c		ScreenInit.lua	Lua closure, bytecode only | reforged: 6 uses; ui/help_general.lua;ui/mainloop.lua;ui/ui_options.lua
+FlushMessages	function			ScreenInit.lua	Lua closure, bytecode only | reforged: not used by Reforged (or defined there)
+WaitForMessage	function	a,b		ScreenInit.lua	Lua closure, bytecode only | reforged: not used by Reforged (or defined there)
+Yield	function			ScreenInit.lua	Lua closure, bytecode only | reforged: not used by Reforged (or defined there)
+ReadFile	function	"path (dofile ""assets/""..path)"		ScreenInit.lua	Lua closure, bytecode only | reforged: not used by Reforged (or defined there)
+CloseWindow	function	value		ScreenInit.lua	Lua closure, bytecode only | reforged: 73 uses; dev/dev_animation.lua;dev/dev_buildings.lua;dev/dev_inventory.lua;dev/dev_money.lua...
+CustomCreator	function	a		ScreenInit.lua	Lua closure, bytecode only | reforged: not used by Reforged (or defined there)
+GetString	function	up to 6 args -> _GetString		ScreenInit.lua	Lua closure, bytecode only | reforged: not used by Reforged (or defined there)
+SetBitmap	function	name,image,x		ScreenInit.lua	Lua closure, bytecode only | reforged: 44 uses; community/render.lua;ui/community_public_profile.lua;ui/hiscore.lua;ui/recipe_category.lua...
+PopModal	function	a		ScreenInit.lua	Lua closure, bytecode only | reforged: 3 uses; dev/dev_buildings.lua;dev/dev_ports.lua;ui/helpers.lua
+SwapToModal	function	script		ScreenInit.lua	Lua closure, bytecode only | reforged: 16 uses; dev/dev_buildings.lua;dev/dev_ports.lua;dev/dev_utils.lua;sim/player.lua...
+DisplayDialog	function	"script (warns ""DisplayDialog called with empty script; aborting"")"		ScreenInit.lua	Lua closure, bytecode only | reforged: 236 uses; dev/dev_buildings.lua;dev/dev_console.lua;dev/dev_inventory.lua;dev/dev_menu.lua...
+SelectLayer	function	n		ScreenInit.lua	Lua closure, bytecode only | reforged: 35 uses; ui/catalogue_history_list.lua;ui/style.lua
+Group	function	t		ScreenInit.lua	Lua closure, bytecode only | reforged: 77 uses; community/render.lua;dev/dev_buildings.lua;dev/dev_console.lua;dev/dev_ingredients.lua...
+FitToChildren	function			ScreenInit.lua	Lua closure, bytecode only | reforged: 2 uses; ui/style.lua
+Pause	function	ms,..		ScreenInit.lua	Lua closure, bytecode only | reforged: not used by Reforged (or defined there)
+SetState	function	key,bool|number		ScreenInit.lua	Lua closure, bytecode only | reforged: not used by Reforged (or defined there)
+RegisterHotkey	function	key,cmd		ScreenInit.lua	Lua closure, bytecode only | reforged: not used by Reforged (or defined there)
+GetTimer	function	(none)	number	00059ce6	TPlatform::Timer bound to the TPlatform instance in the TWindowScript constructor (0xa2a66). Milliseconds since process start (gettimeofday minus the timeval saved at TPlatformData+0x9c4, times 1000), clamped to [0,4294967295], truncated to uint32. Same function as CurrentTime. | reforged: not used by Reforged (or defined there)
+GetConfig	function	string key, string default	string	0005a1f0	Static TPlatform::GetConfig, registered in the TWindowScript constructor (0xa2a66). Returns the stored config string for key, or default if the key is absent. | reforged: not used by Reforged (or defined there)
+IsEnabled	function	string key	bool	001634f0	Static TPlatform::IsEnabled: to_int(GetConfig(key, empty string)) != 0. Registered in the TWindowScript constructor (0xa2a66). | reforged: 1 uses; ui/hiscore.lua
+_MONEY_SIGN	c-data		'$' (0x24)	data 001d8020 (nm of the Mac binary; read by Dollars 00003680)	C character global, NOT a Lua global; no code in the Mac binary writes it, so it always holds the initial byte 0x24. Dollars uses it for every non-zero amount; the |x|<0.5 case returns the literal "$0". | reforged: never referenced
+_NUMERIC_SEPARATOR	c-data		',' (0x2c)	data 001d8021 (read by Dollars 00003680)	C character global, NOT a Lua global; never written, always 0x2c. One separator every three digits counted from the right. | reforged: never referenced

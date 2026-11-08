@@ -1,0 +1,82 @@
+name	kind	args	returns	source address	note
+GenericCreate	function	table	nothing	0xa2620	CreateCustomWindow; creates window from typename
+PostCreate	function	table,typename	nothing	0xa080a	PostChildCreate; runs PostChildrenInit
+PopWindow	function		nothing	0xa10b2	pop script window stack (min depth 1)
+SetWindowName	function	name	nothing	0xa10d8	
+FillRect	function	rect{x1,y1,x2,y2},color{r,g,b,a}	nothing	0xa0c44	draw-time only
+DoSelectLayer	function	layer:int	nothing	0xa08d0	TLayeredWindow only; wrapped by SelectLayer
+EnableWindow	function	name,enable:bool	bool	0xa18a8	walks modal chain; flag 0x100
+GetButtonToggleState	function	name	bool	0xa1994	
+SetButtonToggleState	function	name,state:bool	nothing	0xa00e6	
+RealSetFocus	function	name	nothing	0xa085a	wrapped by SetFocus
+UpdateWindow	function		nothing	0xa00d2	invalidate screen
+PushModal	function	scriptName	string id (%8x)	0x9fc6e	
+ClearModalChildren	function		nothing	0x9fc12	used by SwapToModal
+GetWindowDepth	function		int	0xa05ca	
+DoPopModal	function	returnValue:str	nothing	0x4eb7e	TWindowManager::PopModal
+HandleGetMessage	function	[delay]	(message,command) on resume	0xa04b6	YIELDS
+CreateNamedMessage	function	type:int,name	message	0xa13f8	
+CreateCloseMessage	function		message	0xa1320	type 1, name=%8x of top modal
+PostMessage	function	message	nothing	0xa2248	
+PostMessageToParent	function	message	nothing	0xa287a	
+_GetString	function	id,p1..p5	string	0x9ff1e	# prefix = literal; wrapped by GetString
+StartMovie	function	path,bool,bool	bool	0x9fdf0	
+IsMoviePlaying	function		bool	0x9feb6	
+StopMovie	function		nothing	0x9fede	
+ImageLoaded	function	name	bool	0xa0af8	
+DestroyWindow	function	name	nothing	0xa0920	deferred destroy
+SetPosition	function	name,x,y	nothing	0xa09a2	goes through FixSize
+TagHotKey	function	label,key,...	string	0xa01b0	wraps char in <u>
+StripKeyFromLabel	function	label	label,key	0xa05f8	removes &
+SetCommand	function	buttonName,fn	nothing	0xa1614	
+GetLabel	function	name	string	0xa14a2	error strings name.._is_not_found
+SetLabel	function	name,text	nothing	0xa179e	
+_SetBitmap	function	name,image,scale	nothing	0xa1142	wrapped by SetBitmap
+_RegisterHotkey	function	hotkey,buttonName	nothing	0x9fd3a	wrapped by RegisterHotkey
+DoFitToChildren	function		nothing	0xa05ac	
+DoWindow	function	window:table	nothing	gScreenInit proto4	prelude Lua
+MakeDialog	function	table	nothing	gScreenInit proto6	prelude Lua; creates children
+Creating	function	type,table	nothing	gScreenInit proto7	empty hook
+GetTag	function	tab,tag,...	value	gScreenInit proto10	prelude Lua
+SetStyle	function	style	closure	gScreenInit proto12	
+AppendStyle	function	style	closure	gScreenInit proto13	sets style.parent
+BeginGroup	function		closure	gScreenInit proto9	
+SetFocus	function	name	nothing	gScreenInit proto14	
+Group	function	table	closure	gScreenInit proto35	no window
+FitToChildren	function		closure	gScreenInit proto36	
+SelectLayer	function	layer	closure	gScreenInit proto34	
+DoModal	function	file	gReturnValue	gScreenInit proto19	YIELDS
+DisplayDialog	function	t (t[1]=script)	gReturnValue	gScreenInit proto33	YIELDS
+DoMainWindow	function	file	nothing	gScreenInit proto20	YIELDS
+WaitForCloseMessage	function	id	nothing	gScreenInit proto18	YIELDS
+WaitForMessage	function	[delay],[deferQueue]	message or nil	gScreenInit proto24	YIELDS
+Yield	function		coroutine.yield results	gScreenInit proto25	YIELDS
+Pause	function	time,[waitForKey]	nothing	gScreenInit proto37	YIELDS
+FlushMessages	function		nothing	gScreenInit proto23	
+DisplaySplash	function	movie,graphic,time	nothing	gScreenInit proto22	YIELDS
+ModalReturn	function	value	nothing	gScreenInit proto21	
+CloseWindow	function	[value]	nothing	gScreenInit proto27	
+PopModal	function	r	nothing	gScreenInit proto31	
+SwapToModal	function	name	nothing	gScreenInit proto32	
+ReadFile	function	file	dofile result	gScreenInit proto26	dofile('assets/'..file)
+GetString	function	id,p1..p5	string	gScreenInit proto29	
+SetBitmap	function	name,image,[scale=1]	nothing	gScreenInit proto30	
+SetState	function	key,value	nothing	gScreenInit proto38	
+RegisterHotkey	function	hotkey,buttonName	nothing	gScreenInit proto39	
+Color	function	r,g,b,[a]	{r,g,b,a}/255	gScreenInit proto0	
+FColor	function	r,g,b,[a]	{r,g,b,a}	gScreenInit proto1	
+DistributeX	function	n	table	gScreenInit proto16	
+DistributeY	function	n	table	gScreenInit proto17	
+Window	constructor	name,x,y,w,h,align,raw,children	closure	0x4c616	TWindow
+Text	constructor	name,label,font{name,size,color},flags,defflags,padding,rotation,rotationOriginX/Y,rotationAlign + common	closure	0x55550	TText
+Bitmap	constructor	image,scale,mipmap,hflip,vflip,rotate + common	closure	0x866e2	TImage
+Button	constructor	graphics{3 or 4 names},mask,scale,type,sendToParent,beginGroup,close,default,cancel,on,sound,rolloversound,tooltip,hflip,vflip,rotate,command + common	closure	0x941b8	TButton; full Init key set (tooltip read but unused); label etc come from style.lua
+Slider	constructor	w,h,hslider,railtop,railmid,railbot,sliderimage,sliderrollimage,name,scale,yoffset,value + common	closure	0x89b7a	TSlider; orientation from hslider or h<w; no range keys
+TextEdit	constructor	clearinitial,enablewindow,onkey,widthlimited,password,length,ignore,utf8 + Text keys + common	closure	0x205ae	registered as TCustomTextEdit (Main 0x2952c overrides TTextEdit); Init chain TCustomTextEdit, TTextEdit 0x8c31c, TText 0x55550
+Rollover	constructor	xOffset,yOffset,xAbsolute,yAbsolute,contents,command + common	closure	0x34338	contents is Lua source run on each hover via DoLuaString into a PopupWindow; always fits to children
+BitmapTint	constructor	image,mask,scale,alpha,mipmap,tint{r,g,b,a},dx,dy,hflip,vflip,rotate,w,h + common	closure	0x3bafa	TBitmapTint over TImage::Init 0x866e2; dx,dy default -9999; w,h default -1
+Rectangle	constructor	color,alpha + common	closure	0x3c45c	TRectangle::PostChildrenInit; also registers SetRectangleColor
+BSGWindow	constructor	swallowmouse,frame,color,fill + common	closure	0x6516	TBSGWindow::PostChildrenInit; fill default true, color default (1,1,1,0)
+CharWindow	constructor	name,alpha,scale,happiness + BSGWindow keys + common	closure	0x78ba	Character::PostChildrenInit; happiness default 50
+TightText	constructor	Text keys + pad + common	closure	0x38ca8	TTightText; size forced to 800x600 then shrunk to text bounds + pad (default 3)
+XSellWindow	constructor	(common only)	closure	0x9eafe	TXSellWindow; no own style keys; registered by AttachWindowScript (0x4e480); constructor registers SetupXSell and LaunchGameLink; unused by shipped Lua

@@ -1,0 +1,106 @@
+kind	name	value	source	status
+native	StartGame	()  cursor gun_aimer (16,16); state=1; 10 ms repeating task; counter 0; timer 1:00; countdown 3; speed=startspeed	0040a150 (registered by ctor 0040e940)	fact
+native	RestartGame	()  ResetGame (0040df90: clear trays/lists, new shuffled deck, state 0) then StartGame	0040e1c0	fact
+native	GetProductCount	()  -> number (product counter, +0x3c)	00409fd0	fact
+native	TogglePause	()  ignored in state 5; 3<->saved state; pauses sound; cursor swap	0040abb0	fact
+lua_callback_c2	MinigamePause	() paused text factory_paused	c2 ui/factory_minigame.lua main.5	fact (Lua)
+lua_callback_c2	MinigameWarn	() wasted-ingredient text factory_waste	c2 ui/factory_minigame.lua main.6	fact (Lua)
+lua_callback_c2	MinigameColor	() sets gSim.firstcolor=true; text factory_color	c2 ui/factory_minigame.lua main.7	fact (Lua)
+lua_callback_c2	MinigameEnd	(performance, fpData) thresholds <0 stopped,<11 low,<19 med,<55 high,else awesome after x handicap	c2 ui/factory_minigame.lua main.8	fact (Lua)
+native_c2	ResumeMinigame / PauseMinigame / ResetMinigame / GetProduction	called by the c2 Lua; bodies not decoded (exe packed)	c2 ui/factory_minigame.lua	unknown
+key	prodname	default milkbar; item/<prodname> product picture	Init 0040b080	fact
+key	character	default sffactorykeep; used for wasted_once command	Init	fact
+key	firstMiss	bool default false	Init	fact
+key	port	default empty; prefix of end text key	Init	fact
+key	recipe	table ingredient->count; pairs order	Init	fact
+key	type.trayCount	default 7 (square 8, infusion 7, truffle 6, bar default)	Init; data/items.lua	fact
+key	type.ingredientRate	default 350 (string 004e72e8); never set by Lua	Init	fact
+key	type.speedup	default 1.1 (bar), 1.07 square, 1.1 infusion, 1.09 truffle	Init; data/items.lua	fact
+key	type.startspeed	default 1.0 (bar), 0.9 square, 0.8 infusion, 0.9 truffle	Init; data/items.lua	fact
+key	type.maxspeed	default 8.0 (8 everywhere)	Init	fact
+const	tick	10 ms fixed logical step (repeating task, catch-up like Choc3)	0040a150: FUN_00421980(this,10,1,0,1)	fact
+const	countdown	2400 ms; numbers 3,2,1; tick sound when number changes	tick 00410b30 (0x960)	fact
+const	duration	60000 ms playing	tick 00410b30	fact
+const	warning_bell	once when elapsed first exceeds 52000 (fires at 52010)	tick 00410b30	fact
+const	time_up_speed_floor	speed raised to 5.0 if lower	tick 00410b30	fact
+const	max_misses	8	tick 00410b30	fact
+const	screen	800 x 600; miss when x>800 or y>600 (unsigned) after a step	0040da00	fact
+const	pivot	gun and wheel centre (300,300)	static init 004e5000..004e5150	fact
+const	wheel_radius	225 (tray centres)	Init	fact
+const	wheel_rotation	angle -= dt*2*pi*speed/30000 (one turn per 30 s at speed 1)	00410940	fact
+const	shot_speed	12 px per 10 ms tick = 1.2 px/ms, position kept as truncated ints	0040da00	fact
+const	hit_radius_sq	5881 (r about 76.7) distance from tray bbox centre to the shot position	005253e0; 0040e480	fact
+const	belt_speed	5 px per 10 ms tick = 0.5 px/ms	0040e260 (dt*600/1200)	fact
+const	belt_path	spawn (0,571) -> x to 300 -> y up to 300	0040dd50, 00409f70	fact
+const	feed_interval	350 ms of belt time (ingredientRate)	0040e260	fact
+const	deck_length	floor((floor(60000/rate)+B)/B)*B, B=trayCount*S; per-block shuffle j<->rand()%B+floor(j/B)*B	0040df90	fact
+const	miss_speed_rule	speed=(speed-startspeed)*0.5+startspeed per missed shot	0040da00	fact
+const	complete_speed_rule	speed=min(speed*speedup,maxspeed) when a tray fills	0040e480	fact
+const	collect_line	complete tray collected when bbox top y1 crosses 252 upward	00410940	fact
+const	crate_transit	300 -> 516 over 2000 ms; counted when value exceeds 516	0040c360	fact
+const	end_decel	speed/300 per tick after the game ends	0040a340	fact
+const	arm_animation	clock += round(dt*speed); phase=clock*7/1000; ends at phase>7	0040a880	fact
+const	arm_upper_x_keys	-60,-110,-90,-75,-60,-50,-30,0 added to 723 (y 273)	004e706c	fact
+const	arm_lower_x_keys	-45,-100,-80,-65,-50,-40,-20,0 added to 723 (y 323)	004e70d8	fact
+const	small_wheels	4 gears at (16+100k,608) rotating 2*pi*acc/1200	0040e260	fact
+const	miss_grid	x=631+46*(n mod 4), y=144+46*(n div 4)	0040c4f0	fact
+const	crate_positions	lid (693.5,504); front (695,537); bellows (700,469); product (700,v>=477)	0040c4f0	fact (x,y order inferred)
+const	template_position	(700,300); icon u at (sin,-cos)*50	Init	fact
+const	end_ratio	count/((60000/rate)/S): <.11 low; <.19 med; S<4: <.65 high else awesome; S>=4: <.55 high else awesome	0040a340	fact
+field	+0x34	state 0 init,1 countdown,2 running,3 paused,4 wind-down,5 over		fact
+field	+0x3c	product counter		fact
+field	+0x40	elapsed ms		fact
+field	+0x68	wheel speed (double)		fact
+field	+0x70	wheel deceleration (double)		fact
+field	+0x110	trayCount		fact
+field	+0x114+0x3c*i	tray record: sprite, bbox +0x10, cells +0x20 (99 empty), filled +0x38		fact
+field	+0x300	slot count S		fact
+field	+0x374	gun-loaded ingredient		fact
+field	+0x398	miss count		fact
+field	+0x3b0	products in transit		fact
+sound	countdown_tick.ogg	+0x3bc countdown number change		fact
+sound	minigame_starting_bell.ogg	+0x3c4 countdown ends		fact
+sound	minigame_load_launch.ogg	+0x3cc each shot		fact
+sound	ingredient_success_01..05.ogg	+0x3d4+8k fill k+1		fact
+sound	ingredient_failure_01..08.ogg	+0x404+8k kth miss		fact
+sound	template_complete.ogg	+0x444 completing fill (copied to success index S-1)		fact
+sound	factory_snatch.ogg	+0x44c collection machine starts (if idle)		fact
+sound	template_success.ogg	+0x454 product arrives at crate		fact
+sound	powerup.ogg	+0x45c all trays complete at once		fact
+sound	warning_bell.ogg	+0x464 8 s left		fact
+sound	mini_game_production_over.ogg	+0x46c 60 s elapsed		fact
+sound	factory_shut_down.ogg	+0x474 end of every game		fact
+music	minigame.ogg	started by StartGame; switched to empty name on 8 misses	00409ef0	fact / stop inferred
+asset_c1	image/factory.jpg	800x600 background		fact
+asset_c1	fac_wheel.jpg / fac_wheel_mask.jpg	493x493		fact
+asset_c1	fac_flywheel.png	141x141 at (123,15)		fact
+asset_c1	fac_smallwheel.png	49x48		fact
+asset_c1	fac_plate.png	57x21		fact
+asset_c1	fac_cratefront.png / fac_cratelid.png / fac_bellows.png	114x70 / 117x24 / 128x16		fact
+asset_c1	fac_upperarm.png / fac_lowerarm.png / fac_gear.png / fac_machineover.png	170x64 / 171x64 / 97x97 / 202x165		fact
+asset_c1	tray2..6.png, traycomplete2..6.png	150x150		fact
+asset_c1	gun_shoot.png + gun_shoot.xml	500x150, 5 frames 100x150 anchor (50,75), no DoAnim script		fact
+asset_c1	powerup.xml	11 frames 150x150; powerup.png absent from the archive		fact
+asset_c1	missed_ingredient	referenced by code; no file in the archive		fact
+asset_c1	cursor/gun_aimer.png, cursor/cursor.png	32x32; gun_aimer hotspot (16,16), cursor (1,1)		fact
+asset_c1	control/fac_btn_pause_up|down|over	pause button graphics		fact
+asset_c2	gun_shoot.xml	6 frames 113x126 on 455x253 sheet; DoAnim delay(60) frames{1,2,3,4,5,6,1}		fact
+asset_c2	powerup.xml	11 frames 150x150 on 900x300 (11th blank); no script		fact
+asset_c2	rope_guide.xml	10 frames 40x30 on 122x123 sheet; DoAnim delay(100) loop frames 1..10		fact
+asset_c2	rope.png	40x40		fact
+asset_c2	machine_stack.png	250x600 at x=565		fact
+asset_c2	gun_base.png / gun_aimer.png / missed_ingredient.png	120x120 / 32x32 / 36x43		fact
+asset_c2	tray2..6.png, trayN_ring.png, trayN_mini.png, trayring.png	150x150 / 150x150 / 19x19 (tray2) / 50x50		fact
+c2_default	LProductType	traycount 5, colorcount 1, traycycle 30000, conveyortime 1200, ingredientrate 250, flytime 500, producttime 2000, speedup 1.1, maxspeed 8, starttime 60000, countdown 2400, bonusflytime 700	sim/producttype.lua	fact (Lua)
+c2_override	factory_minigame.lua	traycycle 30000, conveyortime 1200, flytime 500, producttime 2000, speedup 1.1, starttime 60000, countdown 2400, bonusflytime 500 are literals in the Lua	ui/factory_minigame.lua	fact (Lua)
+c2_type	square	trayEnd 0.98 traycount 7 colorcount 2 handicap 0.9	item/itemdefs.lua	fact (Lua)
+c2_type	infusion	trayEnd 0.99 traycount 7 colorcount 2 handicap 0.8 price 49000	item/itemdefs.lua	fact (Lua)
+c2_type	sauce	trayEnd 0.98 traycount 7 colorcount 3 handicap 1.15 price 380000	item/itemdefs.lua	fact (Lua)
+c2_type	praline	trayEnd 0.97 traycount 8 colorcount 2 handicap 1.22 price 625000	item/itemdefs.lua	fact (Lua)
+c2_type	truffle	trayEnd 0.99 traycount 7 colorcount 2 handicap 1.25 price 850000	item/itemdefs.lua	fact (Lua)
+c2_type	exotic	trayEnd 0.98 traycount 7 colorcount 3 handicap 1.28 price 1350000	item/itemdefs.lua	fact (Lua)
+c2_product	b_01	own table: trayEnd 0.95 traycount 5 colorcount 0, type square	item/itemdefs.lua	fact (Lua)
+c1_type	bar	defaults only (trayCount 7, startspeed 1.0, speedup 1.1, maxspeed 8)	data/items.lua	fact (Lua)
+c1_type	square	trayCount 8 startspeed 0.9 speedup 1.07 maxspeed 8	data/items.lua	fact (Lua)
+c1_type	infusion	trayCount 7 startspeed 0.8 speedup 1.1 maxspeed 8	data/items.lua	fact (Lua)
+c1_type	truffle	trayCount 6 startspeed 0.9 speedup 1.09 maxspeed 8	data/items.lua	fact (Lua)

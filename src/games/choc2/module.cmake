@@ -1,0 +1,47 @@
+# Sources of the choc2 game module (paths relative to src/games/choc2/).
+choco_game_module(choc2
+  REQUIRES choc3
+  SOURCES
+    Choc2Module.cpp
+    Choc2Natives.cpp
+    FireworkSprite.cpp
+    FrameWindow.cpp
+    MainMenuWindow.cpp
+    LedgerWindow.cpp
+    Choc2LedgerNatives.cpp
+    Choc2LogoNatives.cpp
+    Choc2MenuNatives.cpp
+    HighScoresWindow.cpp
+    CreditsWindow.cpp
+    Choc2AudioNatives.cpp
+    Choc2Music.cpp
+    Choc2FactoryNatives.cpp
+    FactoryGame.cpp
+    FactoryStatus.cpp
+    Choc2DiceNatives.cpp
+    Choc2BonusNatives.cpp
+    Port.cpp
+    PortScene.cpp
+    Character.cpp
+    Map.cpp
+    ColorMask.cpp
+    MapTravel.cpp
+    TravelSounds.cpp
+    SpriteWindow.cpp
+    TravelWeek.cpp
+    LogoSpec.cpp
+    LogoRenderer.cpp
+    LogoEditor.cpp
+    DiceGame.cpp
+  TESTS
+    test_choc2.cpp
+    test_choc2_ledger.cpp
+    test_choc2_trade.cpp
+    test_choc2_travel.cpp
+    test_choc2_logo.cpp
+    test_choc2_dice.cpp
+    test_choc2_bonus.cpp
+    test_choc2_menu.cpp
+    test_choc2_factory.cpp
+    test_choc2_music.cpp
+)

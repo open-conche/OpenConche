@@ -1,0 +1,10 @@
+# Used by check_scene.py at scale 1 and 2.
+wait 100
+click 400 300
+move 12.5 30
+wait 50
+key alt+Return
+key F11
+key Escape
+screenshot scene.png
+quit

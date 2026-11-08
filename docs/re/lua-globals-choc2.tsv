@@ -1,0 +1,224 @@
+name	reads	files
+Allocate	9	glitz/firework.lua, glitz/sparkle.lua
+Anim	2	glitz/firework.lua, glitz/sparkle.lua
+AnimationWindow	4	ui/help10.lua, ui/help2.lua, ui/help7.lua (+1)
+AppendStyle	44	dev/dev.lua, dev/devquest.lua, dev/devquestvars.lua (+32)
+BeginGroup	3	ui/chooseplayer.lua, ui/ledger.lua, ui/recipebook.lua
+Bitmap	214	sim/character.lua, sim/factory.lua, sim/item.lua (+41)
+BonusGame	1	ui/gamble_bonus.lua
+Button	67	ui/gamble_bonus.lua, ui/gamble_dice.lua, ui/haggle.lua (+16)
+Character	1	sim/character.lua
+CharacterTotal	1	ui/gamble_dice.lua
+CloseWindow	36	dev/devbuildings.lua, dev/devingredients.lua, dev/devmisc.lua (+20)
+Color	29	dev/dev.lua, dev/devquests.lua, glitz/firework.lua (+7)
+CreateNamedMessage	1	ui/mainmenu.lua
+CreateNewUser	2	ui/chooseplayer.lua, ui/mainmenu.lua
+CreateParticles	2	glitz/firework.lua, glitz/sparkle.lua
+Credits	1	ui/credits.lua
+DebugOut	4	dev/devmisc.lua, sim/item.lua, sim/quest.lua (+1)
+DeleteUser	1	ui/chooseplayer.lua
+DiceGame	1	ui/gamble_dice.lua
+DisplayDialog	79	dev/dev.lua, dev/devcurrent.lua, dev/devmisc.lua (+29)
+DisplaySplash	4	ui/mainloop.lua
+DoIntro	1	ui/mainmenu.lua
+DoMainWindow	1	ui/mainloop.lua
+DoModal	18	dev/devmisc.lua, sim/laboratory.lua, sim/port.lua (+6)
+DoWindow	6	dev/dev.lua, ui/numericentry.lua, ui/uihelp.lua
+DynamicWindow	7	ui/buysell.lua, ui/ledger.lua, ui/recipebook.lua
+EnableWindow	158	dev/devquest.lua, ui/buysell.lua, ui/chartalk.lua (+15)
+FactoryGame	1	ui/factory_minigame.lua
+FactoryStatus	1	ui/ledger_factories.lua
+FitToChildren	3	ui/numericentry.lua, ui/uihelp.lua
+Frame	42	ui/buysell.lua, ui/chartalk.lua, ui/chooseplayer.lua (+37)
+GetButtonToggleState	1	ui/hiscoresubmit.lua
+GetCurrentGameMode	1	sim/sim.lua
+GetCurrentUser	4	dev/devmisc.lua, sim/sim.lua, ui/chooseplayer.lua (+1)
+GetLabel	12	dev/devquestvars.lua, ui/buysell.lua, ui/entername.lua (+4)
+GetLogoString	4	ui/logoedit.lua, ui/logoedit_basic.lua
+GetNumUsers	12	ui/chooseplayer.lua, ui/hiscore.lua, ui/hiscore_local.lua (+1)
+GetProduction	3	ui/factory_minigame.lua
+GetSubmitInfo	1	ui/hiscoresubmit.lua
+GetTag	9	ui/uihelp.lua
+GetUserName	6	dev/devmisc.lua, sim/sim.lua, ui/chooseplayer.lua (+1)
+Group	43	dev/devbuildings.lua, dev/devcurrent.lua, dev/devingredients.lua (+28)
+HighScores	2	ui/hiscore.lua, ui/hiscore_local.lua
+InitiateTravel	1	sim/travel.lua
+IsNameInUse	1	ui/entername.lua
+Ledger	1	ui/ledger.lua
+LedgerLabelFont	2	ui/help6.lua
+LoadSound	2	ui/mainloop.lua
+LogoEditor	2	ui/logoedit.lua, ui/logoedit_basic.lua
+MainMenu	1	ui/mainmenu.lua
+MakeDialog	63	dev/dev.lua, dev/devbuildings.lua, dev/devcurrent.lua (+60)
+Map	1	ui/map.lua
+MapTravel	1	ui/map.lua
+NextCategory	2	ui/hiscore.lua, ui/hiscore_local.lua
+NextMode	2	ui/hiscore.lua, ui/hiscore_local.lua
+OpenBrowser	1	ui/uihelp.lua
+Options	1	ui/options.lua
+Pause	9	dev/devmoney.lua, sim/quest_functions.lua, sim/travel.lua (+2)
+PauseMinigame	1	ui/factory_minigame.lua
+PauseMusic	3	ui/factory_minigame.lua
+PlaySound	19	sim/factory.lua, sim/market.lua, sim/quest_functions.lua (+6)
+PlayerTotal	3	ui/gamble_dice.lua
+PopModal	6	ui/lab_game.lua, ui/logoedit.lua, ui/logoedit_basic.lua (+1)
+Port	1	ui/portview.lua
+PostMessage	1	ui/mainmenu.lua
+PrepareGame	1	ui/gamble_bonus.lua
+PreviousCategory	1	ui/hiscore.lua
+PreviousMode	2	ui/hiscore.lua, ui/hiscore_local.lua
+RandomizeLogo	1	ui/logoedit_basic.lua
+Rectangle	26	dev/dev.lua, dev/devbuildings.lua, dev/devcurrent.lua (+16)
+ResetColorMap	2	sim/travel.lua, ui/mainmenu.lua
+ResetLedger	2	dev/devmisc.lua, sim/sim.lua
+ResetMinigame	1	ui/factory_minigame.lua
+ResumeMinigame	3	ui/factory_minigame.lua
+ResumeMusic	1	ui/factory_minigame.lua
+RollFirst	1	ui/gamble_dice.lua
+RollSecond	1	ui/gamble_dice.lua
+Rollover	16	sim/item.lua, sim/medals.lua, ui/factory_status.lua (+8)
+SaveVolumes	1	ui/options.lua
+ScrollDown	2	ui/hiscore.lua, ui/hiscore_local.lua
+ScrollUp	2	ui/hiscore.lua, ui/hiscore_local.lua
+SelectLayer	19	ui/haggle.lua, ui/numericentry.lua, ui/recipebook.lua (+1)
+SelectPrize	2	ui/gamble_bonus.lua
+SetAmbient	4	sim/building.lua, sim/port.lua, ui/factory_minigame.lua (+1)
+SetBitmap	9	ui/factory_status.lua, ui/lab_game.lua
+SetBlendMode	2	glitz/firework.lua, glitz/sparkle.lua
+SetButtonToggleState	10	ui/chooseplayer.lua, ui/hiscoresubmit.lua, ui/lab_game.lua (+3)
+SetCenterJustify	1	ui/logoedit.lua
+SetCharacterMood	1	sim/character.lua
+SetCommand	1	ui/gamble_bonus.lua
+SetCurrentGameMode	9	dev/devmisc.lua, sim/sim.lua, ui/mainmenu.lua
+SetCurrentUser	1	ui/chooseplayer.lua
+SetDefaultStyle	3	ui/mainloop.lua, ui/styles.lua
+SetFocus	4	ui/buysell.lua, ui/entername.lua
+SetGraphicPosition	4	ui/logoedit_basic.lua
+SetLabel	70	dev/devbuildings.lua, dev/devports.lua, dev/devproducts.lua (+13)
+SetLedgerContents	7	sim/factory.lua, sim/quest_functions.lua, sim/travel.lua (+2)
+SetLedgerMode	2	ui/map.lua, ui/portview.lua
+SetLeftJustify	1	ui/logoedit.lua
+SetLogoText	2	ui/logoedit.lua, ui/logoedit_basic.lua
+SetMusicState	13	sim/medals.lua, sim/port.lua, sim/travel.lua (+4)
+SetNumParticles	2	glitz/firework.lua, glitz/sparkle.lua
+SetQuestHint	2	sim/quest.lua
+SetRightJustify	1	ui/logoedit.lua
+SetStyle	12	dev/devquest.lua, dev/devquestvars.lua, ui/factory_status.lua (+4)
+SetTextColor	2	ui/logoedit_basic.lua
+SetTextPosition	4	ui/logoedit_basic.lua
+SetTexture	4	glitz/firework.lua, glitz/sparkle.lua
+SetUserName	1	ui/chooseplayer.lua
+Slider	21	ui/logoedit.lua, ui/logoedit_basic.lua, ui/options.lua
+Sprite	13	ui/help10.lua, ui/help2.lua, ui/help7.lua (+3)
+StartFireworks	2	sim/port.lua
+StartProductionAnim	4	sim/travel.lua
+StillTravelling	1	sim/travel.lua
+StopOne	1	ui/gamble_dice.lua
+StopProductionAnim	5	sim/travel.lua, ui/mainmenu.lua, ui/portview.lua
+StopPulsing	6	sim/building.lua, sim/port.lua, sim/quest_functions.lua (+1)
+SubmitMedals	1	ui/hiscoresubmit.lua
+SubmitScore	2	ui/hiscoresubmit.lua
+SwapToModal	14	dev/devmisc.lua, dev/devports.lua, sim/port.lua (+6)
+Text	252	dev/dev.lua, dev/devquestvars.lua, sim/character.lua (+52)
+TextEdit	10	dev/devquestvars.lua, ui/buysell.lua, ui/entername.lua (+4)
+ToggleBold	1	ui/logoedit.lua
+ToggleFullScreen	1	ui/options.lua
+ToggleItalic	1	ui/logoedit.lua
+ToggleOutline	3	ui/logoedit.lua, ui/logoedit_basic.lua
+ToggleSoundMute	1	ui/options.lua
+TravelOneWeek	1	sim/travel.lua
+UpdateBadge	8	dev/devmisc.lua, sim/medals.lua, sim/quest_functions.lua (+2)
+UpdateDynamicContent	4	sim/medals.lua, ui/recipebook.lua, ui/recipebook_type.lua
+UpdateLedgerContents	10	sim/quest_functions.lua, sim/sim.lua, sim/travel.lua (+2)
+Vec2	11	glitz/firework.lua, glitz/sparkle.lua
+ViewGlobal	2	ui/hiscore.lua, ui/hiscore_local.lua
+ViewLocal	2	ui/hiscore.lua, ui/hiscore_local.lua
+Window	35	sim/character.lua, ui/factory_minigame.lua, ui/help1.lua (+19)
+Yield	1	sim/travel.lua
+angel	1	sim/sim.lua
+assert	4	dev/devmisc.lua, sim/factory.lua, ui/recipebook_type.lua
+bsgAddSprite	5	sim/building.lua, sim/port.lua
+bsgCheckConfig	11	sim/quest_functions.lua, ui/hiscore.lua, ui/hiscore_local.lua (+4)
+bsgCos	2	ui/lab_game.lua, ui/recipebook_recipe.lua
+bsgCurrentTime	4	dev/devmisc.lua, sim/sim.lua
+bsgDate	7	dev/devquest.lua, sim/quest_functions.lua, sim/sim.lua (+2)
+bsgDollars	77	dev/devmoney.lua, sim/factory.lua, sim/item.lua (+14)
+bsgFloor	61	sim/factory.lua, sim/item.lua, sim/market.lua (+15)
+bsgGetMaxScroll	4	sim/sim.lua, ui/ledger_messages.lua
+bsgGetString	2	ui/uihelp.lua
+bsgLoadGameString	2	sim/sim.lua
+bsgLoadStringFile	5	item/itemdefs.lua, ports/portlist.lua, sim/quest.lua
+bsgLogScore	1	sim/sim.lua
+bsgLuaGarbageCollect	1	sim/sim.lua
+bsgMod	9	sim/item.lua, sim/market.lua, sim/sim.lua (+4)
+bsgNextSaveFileName	2	dev/devmisc.lua
+bsgRandom	35	sim/building.lua, sim/character.lua, sim/character_actions.lua (+9)
+bsgRandomSeed	1	ui/mainloop.lua
+bsgReadFromFile	1	dev/devmisc.lua
+bsgSaveGameString	1	sim/sim.lua
+bsgSetGlobalLabel	1	dev/dev.lua
+bsgSetStartLine	4	ui/ledger_messages.lua
+bsgShortDate	1	sim/travel.lua
+bsgSin	2	ui/lab_game.lua, ui/recipebook_recipe.lua
+bsgTimeStamp	2	dev/devmisc.lua
+bsgTriggerAd	3	sim/building.lua, ui/map.lua, ui/portview.lua
+bsgTriggerOffer	1	ui/mainmenu.lua
+bsgWriteToFile	1	dev/devmisc.lua
+devAlpha	8	dev/devbuildings.lua, dev/devcurrent.lua, dev/devingredients.lua (+5)
+dofile	29	dev/devmisc.lua, ports/portlist.lua, sim/sim.lua (+1)
+f2dRotation	2	glitz/firework.lua, glitz/sparkle.lua
+fAge	2	glitz/firework.lua, glitz/sparkle.lua
+fExpire	2	glitz/firework.lua, glitz/sparkle.lua
+fFade	2	glitz/firework.lua, glitz/sparkle.lua
+fGreater	2	glitz/firework.lua, glitz/sparkle.lua
+fRange	11	glitz/firework.lua, glitz/sparkle.lua
+fTimeScale	7	glitz/firework.lua, glitz/sparkle.lua
+finalInc	1	ui/lab_game.lua
+font	1	ui/lab_discovery.lua
+gAOLFlag	1	ui/mainloop.lua
+gChocoSplash	1	ui/mainloop.lua
+gDialogTable	77	dev/devbuildings.lua, dev/devcurrent.lua, dev/devingredients.lua (+27)
+gRealHeight	1	ui/uiconstants.lua
+gRealWidth	1	ui/uiconstants.lua
+gRealXOffset	1	ui/uiconstants.lua
+gRealYOffset	1	ui/uiconstants.lua
+gScreenHeight	1	ui/uiconstants.lua
+gScreenWidth	1	ui/uiconstants.lua
+gSparkleTexture	4	glitz/firework.lua, glitz/sparkle.lua
+gVersionString	1	ui/credits.lua
+genButtonStyle	1	ui/ledger_badge.lua
+ipairs	77	dev/devquest.lua, sim/building.lua, sim/character.lua (+20)
+kAllLayers	5	ui/haggle.lua, ui/uihelp.lua
+kBlendNormal	2	glitz/firework.lua, glitz/sparkle.lua
+kCenter	116	ui/chartalk.lua, ui/chooseplayer.lua, ui/credits.lua (+34)
+kHAlignCenter	57	sim/character.lua, ui/entername.lua, ui/factory_minigame.lua (+20)
+kHAlignLeft	84	dev/dev.lua, dev/devquest.lua, ports/portlocations.lua (+41)
+kHAlignRight	39	ports/abidjan.lua, ports/portlocations.lua, sim/port.lua (+7)
+kMax	240	sim/port.lua, ui/buysell.lua, ui/chooseplayer.lua (+40)
+kPush	1	ui/styles.lua
+kPushButtonAlignment	1	ui/uihelp.lua
+kQuitNow	1	ui/mainmenu.lua
+kRadio	6	ui/chooseplayer.lua, ui/ledger.lua, ui/recipebook.lua (+1)
+kRadioButtonAlignment	1	ui/uihelp.lua
+kToggle	14	ui/hiscoresubmit.lua, ui/lab_game.lua, ui/logoedit.lua (+3)
+kToggleButtonAlignment	1	ui/uihelp.lua
+kVAlignBottom	10	ports/portlocations.lua, ui/help9.lua, ui/ledger.lua (+2)
+kVAlignCenter	87	sim/character.lua, sim/port.lua, ui/buysell.lua (+33)
+kVAlignTop	63	dev/dev.lua, dev/devquest.lua, sim/building.lua (+34)
+loadstring	8	dev/devmisc.lua, sim/sim.lua, ui/hiscoresubmit.lua (+2)
+n	1	sim/quest_functions.lua
+null	1	ui/lab_game.lua
+pColor	6	glitz/firework.lua, glitz/sparkle.lua
+pPosition	6	glitz/firework.lua, glitz/sparkle.lua
+pScale	4	glitz/firework.lua, glitz/sparkle.lua
+pUp	2	glitz/firework.lua, glitz/sparkle.lua
+pairs	47	dev/devquestvars.lua, sim/building.lua, sim/character.lua (+14)
+prodIcon	1	ui/ledger_factories.lua
+require	27	sim/factory.lua, sim/laboratory.lua, sim/market.lua (+4)
+rollY	1	ui/ledger_factories.lua
+setmetatable	9	sim/building.lua, sim/character.lua, sim/item.lua (+5)
+string	12	sim/sim.lua, ui/numericentry.lua, ui/styles.lua (+2)
+table	258	dev/dev.lua, dev/devbuildings.lua, dev/devingredients.lua (+45)
+tonumber	22	dev/devquestvars.lua, sim/quest_functions.lua, ui/buysell.lua (+2)
+tostring	228	dev/devbuildings.lua, dev/devingredients.lua, dev/devmisc.lua (+40)
+type	44	dev/dev.lua, dev/devmisc.lua, dev/devquest.lua (+15)

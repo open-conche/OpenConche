@@ -1,0 +1,36 @@
+# Sources of the choc1 game module (paths relative to src/games/choc1/).
+choco_game_module(choc1
+  REQUIRES choc3
+  SOURCES
+    Choc1Module.cpp
+    Choc1AudioNatives.cpp
+    Choc1Music.cpp
+    Choc1Natives.cpp
+    Choc1Windows.cpp
+    Choc1World.cpp
+    ChoosePlayer.cpp
+    CreditsWindow.cpp
+    DiceGame.cpp
+    Logo.cpp
+    FactoryGame.cpp
+    FactorySim.cpp
+    Finale.cpp
+    FrameWindow.cpp
+    HiscoreWindow.cpp
+    MapScreen.cpp
+    Rollover.cpp
+    SimpleAnimation.cpp
+  TESTS
+    test_choc1.cpp
+    test_choc1_audio.cpp
+    test_choc1_dice.cpp
+    test_choc1_menu.cpp
+    test_choc1_frame.cpp
+    test_choc1_story.cpp
+    test_choc1_map.cpp
+    test_choc1_hiscore.cpp
+    test_choc1_logo.cpp
+    test_choc1_factory.cpp
+    test_choc1_finale.cpp
+    test_choc1_options.cpp
+)

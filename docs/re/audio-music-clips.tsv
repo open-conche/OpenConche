@@ -1,0 +1,31 @@
+event	arrangement	arrangement_channel	tempo	clip_end_samples	timeline_loop	master_fade_ms	source_fade_ms	source_sync_override	source_sync_enabled
+baghdad_sting	New Arrangement 7	baghdad_	115.000000	2116782	false	3000	1410	true	true
+bali_sting	New Arrangement 12	bali_	115.000000	2116782	false	3200	1500	true	true
+belize_sting	New Arrangement 23	belize_	115.000000	2853054	false	3480	1210	true	true
+bogota_sting	New Arrangement 24	bogota_	115.000000	2116782	false	3000	1220	true	true
+capetown_sting	New Arrangement 6	capetown_	115.000000	2300850	false	3100	1270	true	true
+chocolate_making_game	New Arrangement 4	choco_making_game	119.199997	3374058	true	1400	0	true	true
+chocolate_making_game_intro	New Arrangement 4	choco_making_game	119.199997	352800	true	0	860		true
+chocolate_making_game_outro	New Arrangement 4	choco_making_game	119.199997	3374058	true				true
+coffee_making_game	New Arrangement 5	coffee_making	108.199997	3325812	true	1160		true	true
+coffee_making_game_intro	New Arrangement 5	coffee_making	108.199997	293454	true	3500		true	true
+douala_sting	New Arrangement 8	douala_	115.000000	2300850	false	3000	1470	true	true
+falklands_sting	New Arrangement 25	falklands_	115.000000	1932714	false	3110			true
+gobidesert_sting	New Arrangement 14	gobi	115.000000	2116782	false	3100			true
+havana_sting	New Arrangement 9	havana_	115.000000	1932714	false	1300	1615	true	true
+kona_sting	New Arrangement 10	Kona_	115.000000	1932714	false	2700	1380	true	true
+las_vegas_sting	New Arrangement 26	las_vegas_	115.000000	1840680	false	3060		true	true
+lima_sting	New Arrangement 13	lima_	115.000000	1656612	false	3270	1800	true	true
+main_menu	New Arrangement 11	main_menu_	105.000000	1612800	true	1260	910		true
+map_screen	New Arrangement 29	map_	115.000000	920340	true	2580	960	true	true
+morocco_sting	New Arrangement 15	tangiers_	115.000000	1748646	true	2430	1050		true
+port_music1	New Arrangement 1	C3 Gameplay 1	88.300003	4208085	true	3400	1600		true
+port_music2	New Arrangement 2	C3 Gameplay 2	113.300003	2989280	true	2760	2000	true	true
+port_music3	New Arrangement 3	C3 Gameplay 3	106.300003	3992800	true	3290	2030	true	true
+reykjavik_sting	New Arrangement 22	reykjavik_	115.000000	1012374	true	2000			true
+san_francisco_sting	New Arrangement 21	san_francisco_	115.000000	2024748	false	3410	1400	true	true
+tokyo_sting	New Arrangement 16	tokyo_	115.000000	2116782	false	3180	1500	true	true
+toronto_sting	New Arrangement 17	toronto_	115.000000	1840680	false	3400	1800	true	true
+uluru_sting	New Arrangement 18	uluru_	115.000000	3681360	false	3400	1500	true	true
+wellington_sting	New Arrangement 19	wellington_	115.000000	1932714	false	3560	1300	true	true
+zurich_sting	New Arrangement 20	Zurich_	115.000000	2116782	false	3320	1490	true	true

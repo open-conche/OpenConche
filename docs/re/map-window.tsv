@@ -1,0 +1,18 @@
+name	kind	args	returns	address	note
+MapWindow	window type	style: background (string, ""), cloudY (number, 360), cloudTime (number ms, 20000), yFar (0), yNear (400), farScale (1), nearScale (1) + TWindow keys	closure (DSL window constructor)	0002a914 (ctor), 0002ab68 (Init), 0002d12c (PostChildrenInit)	Registered by AddWindowType (not in ui/style.lua). Has no Lua-visible children; builds a sprite tree and one Rollover child per non-hidden port.
+InitiateTravel	function	table t: path (list of {x,y}) or dest {mapx,mapy}; type (list of {fraction, modeName}); events (list of {time ms, action function}); other keys (time, dest when path given) ignored	nothing	0002b31c (registered in ctor 0002a914)	Global set in the MapWindow constructor, closure bound to this window; set to nil in the destructor (0002a63c). No-op if this+0x6c (pTravelTask) is already non-null, which stays true for the life of the window.
+PauseTravel	function	none	nothing	0002a3c4 (registered in ctor 0002a914)	If a travel task exists: TAnimTask::Pause (next-run time = -1, ready flag 0) and travelPaused (this+0x68) = 1. No-op without a task. Global is nil when no MapWindow exists.
+ResumeTravel	function	none	nothing	0002a390 (registered in ctor 0002a914)	If a travel task exists: virtual +0x18 (TOldScalingTask::Restart) with 30 ms, which re-baselines the task clock so paused time is not counted, then travelPaused = 0.
+MapWindow::CollectPortData	method	none	nothing	0002b77e	Iterates _AllPorts; builds marker sprites, labels, Rollover windows and the current-port ring.
+MapWindow::OnTaskAnimate	method	none	true	0002a512	Window animation tick (30 ms): cloudTime += 30, UpdateClouds, invalidate screen.
+MapWindow::WindowToggleForeground	method	none	nothing	0002a53c	App focus lost: stop animation, open pause dialog via Lua string if not paused and map is top modal. Focus regained: restart animation, resume travel if not paused.
+MapWindow::Draw	method	none	nothing	0002a3e8	Draws the root background sprite tree at (0,0), scale 1, then TWindow::Draw.
+TravelTask	class	(sprite, curve, typeTable)	task	00171214 (ctor), 00171544 (Animate)	TOldScalingTask subclass, 0x64 bytes. Moves the vehicle sprite along the curve, drops trail dots, switches vehicle mode, fires events.
+TravelTask::AddEvent	method	(float time, TLuaFunction*)	nothing	00170c24	Appends to event list, raises duration to max(event time), rewinds the event cursor to the list head.
+TravelTask::SetMode	method	str name	nothing	00170fa4	Prefix image/ if no slash, suffix .xml if no dot, load animated texture, set on the vehicle sprite.
+TravelTask::TravelEvent::Trigger	method	none	nothing	001704f4	Pushes the Lua function and calls TScript virtual +0x14 (inferred InjectFunction).
+TCurve	class	control points	-	0001cf30 (Create), 0001d204 (BuildCurve)	Chain of cubic Beziers, 3n+1 points, arc-length parameterised through adaptive subdivision.
+TCurve::GetPoint	method	(float normalLength, TVec2* tangent)	TVec2	0001cd46	t>=1 returns the end point, t<=0 the start point (tangent untouched in both), else walks subdivisions by arc length.
+TCurve::GetLength	method	none	float	0001cd0e	Total polyline length; triggers subdivision if needed and there are at least 4 points.
+TCurve::Subdivide	method	(t0,t1,c0..c3)	float length	0001c578	Recursive de Casteljau; stops when control-polygon length minus chord <= 0.2 (_ACCEPTABLE_ERROR at 0x1d80e0).
+TPathSprite	class	layer	sprite	0002ded2 (ctor), 0002e0fe (Update)	Not used on the world map. Used by PortWindow for cars, boats etc.

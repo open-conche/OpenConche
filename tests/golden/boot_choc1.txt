@@ -1,0 +1,564 @@
+[natives]
+dofile
+loadfile
+require
+_ALERT
+DebugOut
+GetTimer
+CurrentTime
+RandRange
+AddWindowType
+Floor
+Pow
+Mod
+Dollars
+Date
+DayOfYear
+GenericCreate
+PostCreate
+PopWindow
+SetWindowName
+PushModal
+DoPopModal
+GetWindowDepth
+ClearModalChildren
+EnableWindow
+DestroyWindow
+RealSetFocus
+SetCommand
+GetButtonToggleState
+SetButtonToggleState
+_RegisterHotkey
+StripKeyFromLabel
+DoFitToChildren
+SetPosition
+SetWindowPos
+SetAlpha
+UpdateWindow
+ImageLoaded
+_SetBitmap
+DoSelectLayer
+Transition
+GetLabel
+SetLabel
+FillWindow
+CreateNamedMessage
+CreateCloseMessage
+PostMessage
+PostMessageToParent
+GetConfig
+IsEnabled
+CheckConfig
+bsgLoadStringFile
+bsgStringExists
+bsgGetString
+_GetString
+LoadIngredients
+LoadProducts
+LoadPortFileList
+LoadQuestFileList
+SetLayeredLabel
+GetNumUsers
+GetCurrentUser
+GetCurrentUserName
+GetUserName
+IsNameInUse
+CreateNewUser
+SetCurrentUser
+ChangeCurrentUserName
+DeleteUser
+LoadGameString
+SaveGameString
+WriteToFile
+ReadFromFile
+NextSaveFileName
+LogScore
+SetCurrentGameMode
+ToggleSoundMute
+SaveVolumes
+ToggleFullScreen
+SoundEvent
+PausePortAnimations
+SetMood
+GetState
+ScoreAvailable
+UpdateText
+SubmissionDone
+LaunchPrivacyPolicy
+GrabLedger
+ReleaseLedger
+RealUpdateLedger
+SetLedgerQuestIndicator
+AnimateProduction
+StartMovie
+IsMoviePlaying
+StopMovie
+SubmitToServer
+GetLuaServerSubmitSetupVars
+InitiateTravel
+PauseTravel
+ResumeTravel
+PrepareGame
+SelectPrize
+RandomDesign
+SetRecipeType
+SetLayer
+GetLayerImage
+BTSetTint
+SetRectangleColor
+StartGame
+PauseGame
+ResumeGame
+GetScore
+StartSlots
+StopSlots
+StartFireworks
+StopFireworks
+UtilMathFloor
+UtilMathSeedRandom
+UtilTriggerAd
+UtilTriggerCommunityOffer
+UtilTimeStamp
+UtilNextSaveFile
+UtilMathRandom
+UtilDollars
+GetCurrentUserMode
+ChangeUserName
+SetCurrentGameMode
+LoadGameString
+SaveGameString
+UtilCheckCheatMode
+UtilCheckFirstPeek
+UtilCheckCrossSell
+PlaySound
+StartMusic
+QueueMusic
+SetAmbient
+UtilEnableWindow
+UtilDisableWindow
+UtilSetButtonOn
+UtilSetLedgerTab
+UtilSetGlobalString
+UtilSetTextColor
+UtilPositionWindow
+UtilPulseImage
+SetUpdateRate
+SetMoneyDisplayTarget
+SetMoneyDisplay
+UpdateDynamicWindow
+UpdatePlayerButtons
+AnimateTravel
+PauseTravel
+ResumeTravel
+StartGame
+RestartGame
+GetProductCount
+TogglePause
+RollDice
+StopDie
+UtilCurrentTime
+UtilStringToFile
+UtilStringFromFile
+HandleGetMessage
+[window types]
+PortWindow
+CharWindow
+DookieDropper
+LedgerWindow
+SubmitWindow
+HiscoreWindow
+CratesGame
+ChocolateFactory
+CoffeeFactory
+RecipeDesigner
+SlotMachine
+SignEditor
+CurveEditor
+FireworksWindow
+Window
+Text
+Bitmap
+Button
+Slider
+TextEdit
+Rollover
+BitmapTint
+Rectangle
+BSGWindow
+TightText
+XSellWindow
+CreditsWindow
+MapWindow
+RecipeCreator
+OptionsWindow
+SimpleAnimation
+Frame
+DynamicWindow
+ChoosePlayer
+MapScreen
+OptionsDialog
+FactoryGame
+DiceGame
+Logo
+Finale
+[globals]
+AddWindowType	function	2	AddWindowType
+AnimateProduction	function	2	AnimateProduction
+AnimateTravel	function	2	AnimateTravel
+AppendStyle	function	0	
+BSGWindow	function	0	
+BTSetFlip	function	3	BTSetFlip
+BTSetOffset	function	3	BTSetOffset
+BTSetTint	function	2	BTSetTint
+BeginGroup	function	0	
+Bitmap	function	0	
+BitmapTint	function	0	
+Button	function	0	
+ChangeCurrentUserName	function	2	ChangeCurrentUserName
+ChangeUserName	function	2	ChangeUserName
+CharWindow	function	0	
+CheckConfig	function	2	CheckConfig
+ChocolateFactory	function	0	
+ChoosePlayer	function	0	
+ClearModalChildren	function	2	ClearModalChildren
+CloseWindow	function	0	
+CoffeeFactory	function	0	
+Color	function	0	
+CratesGame	function	0	
+CreateCloseMessage	function	2	CreateCloseMessage
+CreateNamedMessage	function	2	CreateNamedMessage
+CreateNewUser	function	2	CreateNewUser
+Creating	function	0	
+CreditsWindow	function	0	
+CurrentTime	function	2	CurrentTime
+CurveEditor	function	0	
+CustomCreator	function	0	
+Date	function	2	Date
+DayOfYear	function	2	DayOfYear
+DebugOut	function	2	DebugOut
+DeleteUser	function	2	DeleteUser
+DestroyWindow	function	2	DestroyWindow
+DiceGame	function	0	
+DisplayDialog	function	0	
+DisplaySplash	function	1	
+DistributeX	function	0	
+DistributeY	function	0	
+DoDialogCommand	function	0	
+DoFitToChildren	function	2	DoFitToChildren
+DoMainWindow	function	0	
+DoModal	function	0	
+DoPopModal	function	2	DoPopModal
+DoSelectLayer	function	2	DoSelectLayer
+DoWindow	function	0	
+Dollars	function	2	Dollars
+DookieDropper	function	0	
+DumpTable	function	0	
+DynamicWindow	function	0	
+EnableWindow	function	2	EnableWindow
+FColor	function	0	
+FactoryGame	function	0	
+FillRect	function	3	FillRect
+FillWindow	function	2	FillWindow
+Finale	function	0	
+FireworksWindow	function	0	
+FitToChildren	function	0	
+Floor	function	2	Floor
+FlushMessages	function	0	
+Frame	function	0	
+GenericCreate	function	2	GenericCreate
+GetButtonToggleState	function	2	GetButtonToggleState
+GetConfig	function	2	GetConfig
+GetCurrentUser	function	2	GetCurrentUser
+GetCurrentUserMode	function	2	GetCurrentUserMode
+GetCurrentUserName	function	2	GetCurrentUserName
+GetLabel	function	2	GetLabel
+GetLayerImage	function	2	GetLayerImage
+GetLuaServerSubmitSetupVars	function	2	GetLuaServerSubmitSetupVars
+GetNumUsers	function	2	GetNumUsers
+GetProductCount	function	2	GetProductCount
+GetScore	function	2	GetScore
+GetState	function	2	GetState
+GetString	function	0	
+GetTag	function	0	
+GetTimer	function	2	GetTimer
+GetUserName	function	2	GetUserName
+GetWindowDepth	function	2	GetWindowDepth
+GrabLedger	function	2	GrabLedger
+Group	function	0	
+HandleGetMessage	function	2	HandleGetMessage
+HiscoreWindow	function	0	
+ImageLoaded	function	2	ImageLoaded
+InitiateTravel	function	2	InitiateTravel
+IsEnabled	function	2	IsEnabled
+IsMoviePlaying	function	2	IsMoviePlaying
+IsNameInUse	function	2	IsNameInUse
+LUA_PATH	string	0	
+LaunchGameLink	function	3	LaunchGameLink
+LaunchPrivacyPolicy	function	2	LaunchPrivacyPolicy
+LedgerWindow	function	0	
+LoadGameString	function	2	LoadGameString
+LoadIngredients	function	2	LoadIngredients
+LoadPortFileList	function	2	LoadPortFileList
+LoadProducts	function	2	LoadProducts
+LoadQuestFileList	function	2	LoadQuestFileList
+LogScore	function	2	LogScore
+Logo	function	0	
+Main	function	0	
+MakeDialog	function	0	
+MapScreen	function	0	
+MapWindow	function	0	
+Mod	function	2	Mod
+ModalReturn	function	0	
+NextSaveFileName	function	2	NextSaveFileName
+OptionsDialog	function	0	
+OptionsWindow	function	0	
+Pause	function	0	
+PauseGame	function	2	PauseGame
+PausePortAnimations	function	2	PausePortAnimations
+PauseTravel	function	2	PauseTravel
+PlaySound	function	2	PlaySound
+Pop	function	0	
+PopModal	function	0	
+PopWindow	function	2	PopWindow
+PortWindow	function	0	
+PostCreate	function	2	PostCreate
+PostMessage	function	2	PostMessage
+PostMessageToParent	function	2	PostMessageToParent
+Pow	function	2	Pow
+PrepareGame	function	2	PrepareGame
+Push	function	0	
+PushModal	function	2	PushModal
+QueryJumpToMenu	function	3	QueryJumpToMenu
+QueryMuteGame	function	3	QueryMuteGame
+QueryRestartMode	function	3	QueryRestartMode
+QueueMusic	function	2	QueueMusic
+QuitToMainMenu	function	3	QuitToMainMenu
+RandRange	function	2	RandRange
+RandomDesign	function	2	RandomDesign
+ReadFile	function	0	
+ReadFromFile	function	2	ReadFromFile
+RealSetFocus	function	2	RealSetFocus
+RealUpdateLedger	function	2	RealUpdateLedger
+RecipeCreator	function	0	
+RecipeDesigner	function	0	
+Rectangle	function	0	
+RegisterHotkey	function	0	
+ReleaseLedger	function	2	ReleaseLedger
+RestartGame	function	2	RestartGame
+ResumeGame	function	2	ResumeGame
+ResumeTravel	function	2	ResumeTravel
+RollDice	function	2	RollDice
+Rollover	function	0	
+SaveGameString	function	2	SaveGameString
+SaveVolumes	function	2	SaveVolumes
+ScoreAvailable	function	2	ScoreAvailable
+SelectLayer	function	0	
+SelectPrize	function	2	SelectPrize
+SetAlpha	function	2	SetAlpha
+SetAmbient	function	2	SetAmbient
+SetAnimScale	function	3	SetAnimScale
+SetAnimSprite	function	3	SetAnimSprite
+SetBackground	function	3	SetBackground
+SetBeginGroup	function	0	
+SetBitmap	function	0	
+SetButtonToggleState	function	2	SetButtonToggleState
+SetCommand	function	2	SetCommand
+SetCurrentGameMode	function	2	SetCurrentGameMode
+SetCurrentUser	function	2	SetCurrentUser
+SetDefault	function	0	
+SetDefaultStyle	function	0	
+SetFocus	function	0	
+SetFont	function	3	SetFont
+SetLabel	function	2	SetLabel
+SetLayer	function	2	SetLayer
+SetLayeredLabel	function	2	SetLayeredLabel
+SetLedgerQuestIndicator	function	2	SetLedgerQuestIndicator
+SetLogo	function	3	SetLogo
+SetMoneyDisplay	function	2	SetMoneyDisplay
+SetMoneyDisplayTarget	function	2	SetMoneyDisplayTarget
+SetMood	function	2	SetMood
+SetPosition	function	2	SetPosition
+SetRecipeType	function	2	SetRecipeType
+SetRectangleColor	function	2	SetRectangleColor
+SetState	function	0	
+SetStyle	function	0	
+SetText	function	3	SetText
+SetTopModalOnly	function	3	SetTopModalOnly
+SetUpdateRate	function	2	SetUpdateRate
+SetWindowName	function	2	SetWindowName
+SetWindowPos	function	2	SetWindowPos
+SetupXSell	function	3	SetupXSell
+SignEditor	function	0	
+SimpleAnimation	function	0	
+Slider	function	0	
+SlotMachine	function	0	
+SoundEvent	function	2	SoundEvent
+StartFireworks	function	2	StartFireworks
+StartGame	function	2	StartGame
+StartMovie	function	2	StartMovie
+StartMusic	function	2	StartMusic
+StartSlots	function	2	StartSlots
+StopDie	function	2	StopDie
+StopFireworks	function	2	StopFireworks
+StopMovie	function	2	StopMovie
+StopSlots	function	2	StopSlots
+StringToClipboard	function	3	StringToClipboard
+StripKeyFromLabel	function	2	StripKeyFromLabel
+SubmissionDone	function	2	SubmissionDone
+SubmitMedalsToServer	function	3	SubmitMedalsToServer
+SubmitToServer	function	3	SubmitToServer
+SubmitWindow	function	0	
+SwapToModal	function	0	
+TagHotKey	function	3	TagHotKey
+Text	function	0	
+TextEdit	function	0	
+TightText	function	0	
+ToggleFullScreen	function	2	ToggleFullScreen
+TogglePause	function	2	TogglePause
+ToggleSoundMute	function	2	ToggleSoundMute
+Transition	function	2	Transition
+UpdateAnimLayer	function	3	UpdateAnimLayer
+UpdateAnimTime	function	3	UpdateAnimTime
+UpdateDynamicWindow	function	2	UpdateDynamicWindow
+UpdatePlayerButtons	function	2	UpdatePlayerButtons
+UpdateText	function	2	UpdateText
+UpdateWindow	function	2	UpdateWindow
+UtilCheckCheatMode	function	2	UtilCheckCheatMode
+UtilCheckCrossSell	function	2	UtilCheckCrossSell
+UtilCheckFirstPeek	function	2	UtilCheckFirstPeek
+UtilCurrentTime	function	2	UtilCurrentTime
+UtilDisableWindow	function	2	UtilDisableWindow
+UtilDollars	function	2	UtilDollars
+UtilEnableWindow	function	2	UtilEnableWindow
+UtilMathFloor	function	2	UtilMathFloor
+UtilMathRandom	function	2	UtilMathRandom
+UtilMathSeedRandom	function	2	UtilMathSeedRandom
+UtilNextSaveFile	function	2	UtilNextSaveFile
+UtilPositionWindow	function	2	UtilPositionWindow
+UtilPulseImage	function	2	UtilPulseImage
+UtilSetButtonOn	function	2	UtilSetButtonOn
+UtilSetGlobalString	function	2	UtilSetGlobalString
+UtilSetLedgerTab	function	2	UtilSetLedgerTab
+UtilSetTextColor	function	2	UtilSetTextColor
+UtilStringFromFile	function	2	UtilStringFromFile
+UtilStringToFile	function	2	UtilStringToFile
+UtilTimeStamp	function	2	UtilTimeStamp
+UtilToClipboard	function	3	UtilToClipboard
+UtilTriggerAd	function	2	UtilTriggerAd
+UtilTriggerCommunityOffer	function	2	UtilTriggerCommunityOffer
+WaitForCloseMessage	function	0	
+WaitForMessage	function	0	
+Window	function	0	
+WriteToFile	function	2	WriteToFile
+XSellWindow	function	0	
+Yield	function	0	
+_ALERT	function	2	_ALERT
+_G	table	0	
+_GetString	function	2	_GetString
+_LOADED	table	0	
+_RegisterHotkey	function	2	_RegisterHotkey
+_SetBitmap	function	2	_SetBitmap
+_SetState	function	3	_SetState
+_VERSION	string	0	
+assert	function	0	
+bsgGetString	function	2	bsgGetString
+bsgLoadStringFile	function	2	bsgLoadStringFile
+bsgStringExists	function	2	bsgStringExists
+collectgarbage	function	0	
+coroutine	table	0	
+dofile	function	2	dofile
+error	function	0	
+gBeginGroup	number	0	
+gClosedWindows	table	0	
+gCommandQueue	table	0	
+gCount	number	0	
+gCurID	number	0	
+gCurrentDefaultStyle	table	0	
+gDialogTable	table	0	
+gMessageQueue	table	0	
+gParent	table	0	
+gVersionString	string	0	
+gcinfo	function	0	
+getfenv	function	0	
+getmetatable	function	0	
+idtable	table	0	
+ipairs	function	0	
+kAllLayers	number	0	
+kBreakNow	string	0	
+kButtonPress	number	0	
+kCenter	number	0	
+kCheatMode	string	0	
+kCloseWindow	number	0	
+kCmdLine	string	0	
+kCommandOnly	number	0	
+kComputerId	string	0	
+kDefault	number	0	
+kDefaultAction	number	0	
+kDownloadButton	string	0	
+kEncryptionKey	string	0	
+kGameHeight	number	0	
+kGameMode	string	0	
+kGameName	string	0	
+kGameOver	string	0	
+kGameScale	number	0	
+kGameVersion	string	0	
+kGameWidth	number	0	
+kGeneric	number	0	
+kHAlignCenter	number	0	
+kHAlignLeft	number	0	
+kHAlignRight	number	0	
+kHiscoreAnonymous	string	0	
+kHiscoreLocalOnly	string	0	
+kInstallKey	string	0	
+kLevel	string	0	
+kMax	number	0	
+kMaxLevel	string	0	
+kModalClosed	number	0	
+kMute	string	0	
+kNoMoreContent	string	0	
+kPause	string	0	
+kPressAnyKey	number	0	
+kPush	number	0	
+kPushButtonAlignment	number	0	
+kQuitNow	number	0	
+kRadio	number	0	
+kRadioButtonAlignment	number	0	
+kRestartButton	string	0	
+kScore	string	0	
+kScreenHeight	number	0	
+kScreenWidth	number	0	
+kSliderMouseUp	number	0	
+kSliderPageDown	number	0	
+kSliderPageUp	number	0	
+kSliderValChanged	number	0	
+kSubLevel	string	0	
+kSystemMode	string	0	
+kTextEditChanged	number	0	
+kToggle	number	0	
+kToggleButtonAlignment	number	0	
+kUpsellFrequency	string	0	
+kUserMessageBase	number	0	
+kVAlignBottom	number	0	
+kVAlignCenter	number	0	
+kVAlignTop	number	0	
+loadfile	function	2	loadfile
+loadstring	function	0	
+newproxy	function	1	
+next	function	0	
+pairs	function	0	
+pcall	function	0	
+print	function	0	
+rawequal	function	0	
+rawget	function	0	
+rawset	function	0	
+require	function	2	require
+setfenv	function	0	
+setmetatable	function	0	
+string	table	0	
+table	table	0	
+tonumber	function	0	
+toparams	function	3	toparams
+tostring	function	0	
+type	function	0	
+unpack	function	0	
+xpcall	function	0	

@@ -1,0 +1,63 @@
+name	kind	args	returns	address	note
+GrabLedger	native function	()	nothing	0002901a	LedgerWindow::Grab. First call: new LedgerWindow, RunScript ui/ledger.lua with it as window context, FitToChildren, PrepareInstance (money=display=target, collect droppers, UpdateLedger all), 50 ms anim task. Later calls: detach from parent. Then add to top modal and SetWindowDepth(front). No update is issued; callers follow with UpdateLedger(portview|mapview).
+ReleaseLedger	native function	()	nothing	0002784e	LedgerWindow::Release. Removes the ledger from its parent if both exist; does not delete it. Must run before the holding modal is destroyed.
+RealUpdateLedger	native function (registered by LedgerWindow ctor, nil on dtor)	(string mode, string data)	nothing	000278a0	Modes (exact): newplayer, all (time+money+rank+factory, plus quest for newplayer only), time, money, rank, quest (questText:=data), factory, portview, mapview. Unknown modes only invalidate. money animates 20 ticks of 50 ms; all numbers float32-rounded. Lua wrapper UpdateLedger(type) computes data.
+SetLedgerQuestIndicator	native function (registered by LedgerWindow ctor, nil on dtor)	(string mode)	nothing	0002887c	on: complete image, no flash. flash: complete image, flash 250 ms phases for 1500 ms then steady complete; sound quest_requirements_met only on transition into flash. anything else: incomplete image. Child ledger_questgoals required. flashQuest starts true in ctor.
+AnimateProduction	native function (registered by LedgerWindow ctor, nil on dtor)	()	nothing	00027874	Resets every DookieDropper animation clock to 0. Called at the start of TickSim.
+UpdateLedger	lua function (ui/helpers.lua)	(string type)	nothing		Wrapper: factory covers for factory/newplayer, quest summary data for quest/newplayer (font-size prefix by length), RealUpdateLedger(type,data), then UpdateActiveQuestGoalsComplete.
+UpdateActiveQuestGoalsComplete	lua function (ui/helpers.lua)	()	nothing		Computes off/flash/on from Player:GetPrimaryQuest():AreGoalsMet() and calls SetLedgerQuestIndicator.
+LedgerUpdateDisplay	reforged optional hook	()	nothing		Referenced under if-guard in Reforged ui_buysell.lua; defined nowhere. Leave undefined.
+LedgerWindow	internal class (not a DSL type)			00028e54	Created only by GrabLedger; size 0x84; no AddWindowType. Children come from ui/ledger.lua.
+DookieDropper	window type (DSL)	x,y,w,h,name(=factory name),contents,command,itemx=18,itemy=86,ingredienty=58,barHeight=42,countx=57,county=86; children Text port, Text count	window	00020aee	Rollover subclass. Update 000211ee reads Player.factories[name].current/production/stall, Player.rank, _AllProducts[current].counts/appearance, draws bars from Player.supply / _weeksPerColumn[rank] (4,6,8,8,8,10,10). Draw 00021ecc. Animate 00020d40 (50 ms steps to 2000).
+SetMood	native function	(string characterName, number happiness 0..100)	nothing	00007866	Character::SetCharacterMood. For every visible Character with that name: frame target by SetMood 000076fa (3 frames: <33.3 -> 1, <66.7 -> 0, else 2; N frames: min(N-1,(int)((N-1)*h/100)+1)); 200 ms cross-fade in 50 ms steps. No-op if none visible.
+GetState	native function (two registrations, last wins)	() for THiscore; (string key) for TGameState	number (THiscore state 0..5) / string	0016e87c; 00073a52	Shipped Lua only uses the no-argument THiscore form: 0 local,1 requesting categories,2 requesting scores,3 submitting,4 global,5 error. Registered by THiscore ctor, cleared by its dtor.
+ScoreAvailable	native function (THiscore)	()	bool	00022e38	True iff the current user has a row in the current game-mode local table whose dnq byte is 0 (any freshly logged score).
+UpdateText	native function (THiscore)	()	nothing	000247ea	Refreshes hiscore rows and panel text. Unused by shipped Lua.
+SubmissionDone	native function (THiscore)	(bool qualified)	nothing	000253ec	state:=1, request categories, submitState:=qualified?success:DNQ, UpdateText, then runs Lua UpdateButtons().
+LaunchPrivacyPolicy	native function (THiscore)	()	nothing	00022e78	Opens http://www.playfirst.com/privacypolicy.html. Unused by Lua; no-op.
+UpdateButtons	lua global required by engine	()	nothing	00022dd0	Called by THiscore::UpdateButtons via DoLuaString; defined in ui/hiscore.lua.
+LogScore	native function	(number score, string gameData, string medalXml)	nothing	00003ad6	RecordScore: per game-mode table, max 500 rows sorted descending, one row per user (replaced only if higher), competition ranks. Row: rank,score,user,gameData,medals,mode,local=true,dnq=false,guid.
+GetScore	native function (factory)	()	number	ChocolateFactory 0016549c; CoffeeFactory ctor	Factory mini-game score so far; registered by the last-constructed factory window. Phase 4.
+StartGame	native function (factory)	()	nothing	0000d1d6 (chocolate)	Resets and starts the factory mini-game; sets states ChocolateFactoryTime=restart, RecycleCount=0. Phase 4.
+PauseGame	native function (factory)	(string text)	nothing	00008384 (chocolate)	Sets Lua global gPauseText=text and fills window information with ui/game_pause.lua. Phase 4.
+ResumeGame	native function (factory)	()	nothing	0000c82c (chocolate)	Phase 4.
+PrepareGame	native function (TBonusGame)	(number bet)	number total of crate values	0003cdc6	21 crates; value=(uint)(bet*f+0.5) floored to 100s, min 100 if f>0; f = .435x3,.4,.35x4,.25x4,.24x3,.15,.1,.05,0x3 (sum 5.125); shuffled by 21 swaps with rand()%21.
+SelectPrize	native function (TBonusGame)	(number index 1..21, bool final)	number crate value (0 = bomb)	0003cfea	Opens a crate; sounds crate_click, crate_with_money / crate_no_money; whammy_devil image for bombs; final=true reveals without sparkle.
+StartSlots	native function (SlotMachine)	(number s1,number s2,number s3,number s4,number payout)	nothing	00039f16	s1..s4 = 1-based option index per wheel; payout float drives sparkle (gSparkleTime=payout*0.5+1, gSparkleDensity=payout*10; <=0 skips sparkle). 50 ms animation. Calls DSL onstopped when wheels stop and onpayout after sparkle.
+StopSlots	native function (SlotMachine)	()	nothing	0003a0ca	Moves the first still-spinning wheel with state>3 to state 3.
+RandomDesign	native function (RecipeDesigner)	()	nothing	000327a4	Sound randomize, 100 ms animation for 2 s; each tick re-rolls layers 0 (<=1000 ms), 1 (<1501, RandRange(1,n-1)), 2 (<1801, RandRange(2,n-1)), 3, and runs Lua SetRecipeTint(layer,1..100).
+SetRecipeType	native function (RecipeDesigner)	(string category)	nothing	00032e32	Scans custom/<category>/*.png (skipping _highlight) into four layer lists by layer1..layer4 in the name; appends empty entries (beverage: lists 2,4; others 2,3,4).
+SetLayer	native function (RecipeDesigner)	(number layer 0..3, number index)	number applied index	00033418	index wrapped (index+size)%size; updates option_layerN/option_highlightN/display_layerN/display_highlightN.
+GetLayerImage	native function (RecipeDesigner)	(number layer)	string	0003281c	Current entry without the leading custom/ (7 chars); empty for none.
+SetRecipeTint	lua global required by engine	(number layer 1..4, number 1..100)	nothing		Called by RecipeDesigner animation; defined in ui_kitchen.lua.
+SetBackground	native function (SignEditor)	(string name)	nothing	0003795e	Loads logo/<name> as the sign background.
+SetLogo	native function (SignEditor)	(string name)	nothing	00037852	Loads logo/<name> as the logo sprite.
+SetFont	native function (SignEditor)	(string name)	nothing	00036d4c	Font fonts/<name> for the sign text sprite.
+SetText	native function (SignEditor)	(string text)	nothing	00036df2	Sets the sign text sprite text (not the generic window SetText).
+BTSetTint	native function	(string windowName, table {r,g,b,a})	nothing	0003b8b6	Top-modal child lookup, must be BitmapTint; fields [1..4] default 1.0; no invalidate.
+BTSetOffset	native function	(string windowName, number x, number y)	nothing	0003b966	Sets offset floats at +0x58,+0x5c of the BitmapTint.
+BTSetFlip	native function	(string windowName, bool)	nothing	0003b910	Sets flip byte at +0x68.
+SetRectangleColor	native function	(string windowName, table {r,g,b,a})	nothing	0003c926	Top-modal child lookup, must be Rectangle; missing fields default 0.0 (alpha 0 hides it); InvalidateScreen.
+SaveVolumes	native function (TOptions, registered in OptionsWindow ctor, never cleared)	()	nothing	0002d678	Per child slider sfxlevelslider/musiclevelslider/ambientlevelslider: prefs soundlevel/musiclevel/ambientlevel[curuser] = (int)(value*1000), flushed. Defaults 750/650/500.
+ToggleFullScreen	native function	()	bool	00035928	SetFullscreen(!current); on success prefs fullscreen=1/0 (global) and returns true; false on platform failure, no pref change.
+ToggleSoundMute	native function	()	nothing	00035a1e	soundoff[curuser] = (old+1)&1; SetState(kMute,new); BSGSoundMute(QueryMuteGame()).
+SoundEvent	native function	(string key)	nothing	00005166	Silent no-op acceptable; never errors on unknown keys.
+BSGSetSoundLevel	C++ function (not Lua)	(float 0..1)	nothing	00004f6a	Sound manager type volume 1000 and 0, CADI Sfx Volume. Called live by OptionsWindow on slider messages and by SetSoundForCurrentUser.
+BSGSetMusicLevel	C++ function (not Lua)	(float 0..1)	nothing	00004f22	Sound manager type 1001, CADI Music Volume.
+BSGSetAmbientLevel	C++ function (not Lua)	(float 0..1)	nothing	00004fda	CADI Environments Volume only.
+BSGSoundMute	C++ function (not Lua)	(bool mute=true)	nothing	00004e78	true: master volume 0 and CADI volumes 0; false: master 1.0 and SetSoundForCurrentUser.
+QuitToMainMenu	native function	()	nothing	0003606c	Pops modals from the top (PopModal(format %8x id)) until the top modal has no parent. Unused by shipped Lua.
+StartMovie	native function	(string path, bool, bool)	bool	0009fdf0	Empty path false; otherwise TFlashHost on path, true if Start succeeds. Engine: return false (movies skipped) so DisplaySplash shows the still image.
+IsMoviePlaying	native function	()	bool	0009feb6	True only while a host exists and plays. Engine: false.
+StopMovie	native function	()	nothing	0009fede	Stops and deletes the host; safe with none.
+SubmitToServer	native function (TServerSubmit ctor)	(string name, string account, string pass, bool remember, bool medalsOnly)	nothing	000354ce	Empty pass: store pref _anonusername=name, submit anonymously; else submit with account/pass. Then Lua SwitchModes(true) and 20 ms animation that polls the request and sets gReturnValue='success'|'qualified' and pops the modal, or shows submiterror. Offline: no-op that calls SwitchModes(false).
+GetLuaServerSubmitSetupVars	native function (TServerSubmit::Register)	(bool medalsMode)	string of Lua source	00035168	gNameEdit='<_anonusername>'; then gAccountEdit/gPassEdit/gRemember (remembered login or empty,false); then gMedalsMode=true; or gMedalsMode=false;gEligibleScore=<eligible local score or 0>.
+SwitchModes	lua global required by engine	(bool submit)	nothing	00034a4c	Called by TServerSubmit via DoLuaString as SwitchModes(true|false); defined in ui/serversubmit.lua.
+SubmitWindow	window type (DSL)	base TWindow keys; children nameedit, accountedit, submittoserver, submitconnect, submiterror, submiterrorok	window	00035084	TServerSubmit. Registered by TServerSubmit::Register with AddWindowType.
+GetTopModalWindow	reforged-only, not in Mac binary	()	window userdata with GetName()/GetID() (inferred)		Only used by CloseAllModals in Reforged helpers.lua, which nothing calls. Leave unregistered.
+SaveCreationToFile	reforged-only, not in Mac binary	(table {name,description,category,ingredients,appearance})	nothing		Only used by ui_kitchen.lua SaveCreation(), which nothing calls. Leave unregistered or logged no-op.
+RankNames	lua global, undefined				Guarded by `RankNames and ...` in community_scores_results.lua; nothing defines it. Rank names are string keys rank_1..rank_5.
+_SetState	native function	(string key, string value)	nothing	00074632	TGameState::SetState. Key prefix ++ increments. Key kMute toggles master volume 0 / restore. Dead in shipped Lua (SetState calls are commented FIRST PEEK).
+QueryMuteGame	native function	()	bool	00073be6	Any handler, else to_int(GetState(kMute)) != 0.
+QueryRestartMode	native function	()	bool	000739bc	Polls handlers; false without any.
+QueryJumpToMenu	native function	()	bool	00073a06	Polls handlers; false without any.

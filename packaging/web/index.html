@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<!-- The web build's page (cmake/Web.cmake builds the site around it). SDL draws into #canvas and, with no CSS size on
+     the canvas, fills the document and follows the browser window; the engine letterboxes its 800x600 picture inside. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <!-- Added to an iPad's Home Screen, the page opens without Safari's bars. -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <title>OpenConche</title>
+  <style>
+    html, body { margin: 0; padding: 0; background: #000; overflow: hidden; height: 100%; }
+    /* No pinch, scroll or long-press menus: every touch is the game's. */
+    body { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+    canvas { display: block; outline: none; }
+    #status { position: fixed; left: 0; right: 0; top: 45%; text-align: center; color: #ddd;
+              font: 16px/1.5 system-ui, sans-serif; pointer-events: none; }
+    #status.hidden { display: none; }
+    /* The chooser, the page without a ?game= query. */
+    #chooser { color: #ddd; font: 18px/1.6 system-ui, sans-serif; padding: 12vh 8vw; }
+    #chooser h1 { font-weight: 600; font-size: 28px; margin: 0 0 24px; }
+    #chooser a { display: block; color: #fff; text-decoration: none; background: #3a1a12; border-radius: 10px;
+                 padding: 18px 24px; margin: 12px 0; font-size: 22px; }
+    #chooser a:active { background: #5a2a1c; }
+    /* The on-screen keyboard's anchor (see chocoTextInput): focusable, never visible. */
+    #kbd { position: fixed; left: 0; top: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; font-size: 16px;
+           -webkit-user-select: text; user-select: text; /* Safari refuses focus to an input under user-select: none */ }
+  </style>
+</head>
+<body>
+  <div id="status">Loading…</div>
+  <canvas id="canvas" tabindex="0" oncontextmenu="event.preventDefault()"></canvas>
+  <script src="games.js"></script>
+  <script>
+    var game = new URLSearchParams(location.search).get('game');
+    var statusLine = document.getElementById('status'); // window.status is the browser's own, hence the name
+    var gameChosen = CHOCO_GAMES.some(function (g) { return g.id === game; });
+    if (!gameChosen) {
+      // No game asked for: the chooser, one link per packaged game. The engine is not loaded (see the end).
+      document.body.innerHTML = '<div id="chooser"><h1>OpenConche</h1></div>';
+      var chooser = document.getElementById('chooser');
+      CHOCO_GAMES.forEach(function (g) {
+        var a = document.createElement('a');
+        a.href = '?game=' + encodeURIComponent(g.id);
+        a.textContent = g.title;
+        chooser.appendChild(a);
+      });
+    }
+
+    // The user folder (/user, the saves and prefs) lives in IndexedDB. Mounted and read back before main runs; the
+    // engine calls chocoSync after every write it makes there (platform::syncUserDir), and chocoSync(1) once the
+    // run is over, which goes to the chooser after the last flush: the web build's "exit" leads back to the
+    // game list.
+    var syncing = false, syncAgain = false, leaveWhenSynced = false;
+    function chocoSync(leaveAfter) {
+      if (leaveAfter) leaveWhenSynced = true;
+      if (syncing) { syncAgain = true; return; }
+      syncing = true;
+      Module.FS.syncfs(false, function (err) {
+        syncing = false;
+        if (err) console.error('user folder sync failed', err);
+        if (syncAgain) { syncAgain = false; chocoSync(0); return; }
+        if (leaveWhenSynced) location.href = location.pathname;
+      });
+    }
+
+    // The on-screen keyboard. SDL's web backend cannot raise one, so while the engine wants text (chocoTextInput(1),
+    // from Window::setTextInput) a tap on the page focuses the hidden input, which makes a tablet show its keyboard
+    // (a focus outside a touch handler is refused there). What is typed goes to the engine's input injector, and the
+    // events stop here so SDL's own window handlers do not see them a second time. A hardware keyboard with nothing
+    // focused still reaches SDL directly.
+    var kbd = null, textWanted = false;
+    var specialKeys = { Enter: 'Return', Backspace: 'Backspace', Escape: 'Escape', Tab: 'Tab', Delete: 'Delete',
+                        ArrowLeft: 'Left', ArrowRight: 'Right', Home: 'Home', End: 'End' };
+    // Made on first use: SDL's window creation moves everything else in the body into a hidden container.
+    function keyboardInput() {
+      if (kbd) return kbd;
+      kbd = document.createElement('input');
+      kbd.id = 'kbd';
+      kbd.type = 'text';
+      kbd.autocomplete = 'off';
+      kbd.autocapitalize = 'off';
+      kbd.spellcheck = false;
+      kbd.setAttribute('autocorrect', 'off');
+      kbd.setAttribute('aria-hidden', 'true');
+      kbd.addEventListener('keydown', function (e) {
+        e.stopPropagation();
+        var spec = specialKeys[e.key];
+        if (spec) { e.preventDefault(); Module.ccall('choco_web_key', null, ['string'], [spec]); }
+      });
+      kbd.addEventListener('keyup', function (e) { e.stopPropagation(); });
+      kbd.addEventListener('keypress', function (e) { e.stopPropagation(); });
+      kbd.addEventListener('input', function (e) {
+        if (e.inputType === 'insertText' && e.data) Module.ccall('choco_web_text', null, ['string'], [e.data]);
+        kbd.value = '';
+      });
+      document.body.appendChild(kbd);
+      return kbd;
+    }
+    function chocoTextInput(on) {
+      textWanted = !!on;
+      if (!textWanted && kbd && document.activeElement === kbd) kbd.blur();
+    }
+    // click: the last event of a tap, after the mousedown whose default action would focus the canvas again.
+    if (gameChosen) document.getElementById('canvas').addEventListener('click', function () {
+      if (textWanted && document.activeElement !== kbd) keyboardInput().focus({ preventScroll: true });
+    });
+
+    var Module = gameChosen && {
+      canvas: document.getElementById('canvas'),
+      arguments: ['--assets', '/assets/' + game, '--userdir', '/user/' + game],
+      preRun: [function () {
+        addRunDependency('user-folder');
+        Module.FS.mkdir('/user');
+        Module.FS.mount(Module.IDBFS, {}, '/user');
+        Module.FS.syncfs(true, function (err) {
+          if (err) console.error('user folder restore failed', err);
+          removeRunDependency('user-folder');
+        });
+      }],
+      setStatus: function (text) {
+        // The data package reports its download here and clears it when done.
+        statusLine.textContent = text;
+        statusLine.classList.toggle('hidden', !text);
+      },
+      postRun: [function () { statusLine.classList.add('hidden'); }],
+      print: function (text) { console.log(text); },
+      printErr: function (text) { console.warn(text); },
+      onAbort: function (what) {
+        statusLine.textContent = 'The engine stopped: ' + what;
+        statusLine.classList.remove('hidden');
+        document.body.appendChild(statusLine); // back out of SDL's hidden container (see keyboardInput)
+      }
+    };
+    // The game's data package registers its files with Module before the engine loads, so it goes first.
+    function load(src, then) {
+      var s = document.createElement('script');
+      s.src = src;
+      s.onload = then;
+      s.onerror = function () { statusLine.textContent = 'Cannot load ' + src; };
+      document.body.appendChild(s);
+    }
+    if (gameChosen) load(game + '.js', function () { load('openconche.js'); });
+  </script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+name	kind	args	returns	source address	note
+StartGame	lua global (native)	()	nothing	0x8ea8 ctor registers; body ChocolateFactory::StartGame 0xd1d6	Sets TGameState ChocolateFactoryTime="restart", RecycleCount=0; ResetGame; starts 10 ms window animation; SetGameState(1); ResumeGame. Also called by ui/chocolate_gameover.lua try_again. Name shared with CoffeeFactory (last constructed wins; not cleared by the destructor)
+PauseGame	lua global (native)	([string textKey])	nothing	0x8ea8 ctor registers; body 0x8384	Always resets cursor to cursor/cursor. If not paused: pauses sound and all tasks, stops animation, shows Go/hides Pause, sets global gPauseText=textKey and loads ui/game_pause.lua into the sibling "information" window. Missing arg = "" (game_pause.lua then uses game_paused). Ends with SetTopModalOnly(false)
+ResumeGame	lua global (native)	()	nothing	0x8ea8 ctor registers; body 0xc82c	Cursor cursor/gun_aimer hotspot (16,16). If paused: unpause sound, ChocolateFactoryTime=1, hide Go/show Pause, hide information, Restart all tasks, restart 10 ms animation, re-run SetGameState(state), clear paused. Ends with SetTopModalOnly(true)
+GetScore	lua global (native)	()	number (uint)	0x8ea8 ctor registers; body 0x16549c	Cases counted so far (events 0x3ef and 0x3ee). The only value the game reports; ui/chocolate_gameover.lua passes it to CloseWindow
+ChocolateFactory	window type	DSL table	window	ChocolateFactoryDynamicCreate 0x93d8; Init 0x9414	Registered with AddWindowType. Keys below. Lua-created child Texts named score and countdown (time optional, absent in shipped Lua). Siblings go/pause/information found via parent
+ChocolateFactory::Init	native method	TWindowStyle&	void	0x9414	Reseeds global RNG with TPlatform::Timer, builds conveyor, product belt, trays, machinery sprites, gun, rings, recycler, timer; ends with PauseGame("game_paused")
+ChocolateFactory::PostChildrenInit	native method	TWindowStyle&	void	0xd2e0	Resolves Text children time/countdown/score; centres timer face on score rect (fallback 720,80); ResetGame; SetAlpha(1,true)
+ChocolateFactory::SetGameState	native method	GameState	void	0xbc48	States 0 INIT,1 COUNTDOWN,2 PLAYING,3 ENDING,4 ABORTED,5 OVER. Entry actions per state in chocolate-factory.md 4.2
+ChocolateFactory::OnTaskAnimate	native method	()	bool (1)	0xc180	One call = 10 game ms (window animation delay 10, repeat, catch-up on, resync if >1 s behind). Clock, countdown, whistle, hand, task ticks, end conditions
+ChocolateFactory::ResetGame	native method	()	void	0xcf02	clock=gameTime+countdownTime, score/bonus/miss=0, state=1, all tasks Reset(1.0), PauseGame("game_paused"), clears missed sprites, hides Go and Pause
+ChocolateFactory::MissedIngredient	native method	IngredientRef	void	0xcac4	Parks sprite in divot missed[missCount] at scale 0.6; 8th miss -> state 4; else tray scale *=0.5 (min 1); sound ingredient_failure_N; tutorial pause choco_first_missed
+ChocolateFactory::OnMessage	native method	TMessage*	bool	0xcce8	Handles 0x3e9,0x3eb,0x3ec,0x3ed,0x3ee,0x3ef,0x3f0,0x3f1 (see message rows)
+ChocolateFactory::OnMouseMove	native method	TPoint	bool	0x80d2	Gun rotation = acos(dy of normalized mouse-gun vector), negated if dx>0, plus pi
+ChocolateFactory::OnMouseDown	native method	TPoint	bool	0x8000	Only when state==2: ChocolateGunTask::Fire(point)
+ChocolateFactory::OnKeyDown	native method	(char key, uint flags)	bool (false)	0x866c	Escape pauses with game_paused if not paused; with kCheatMode config and flag bit0 also DoModal('dev/dev_menu.lua')
+ChocolateFactory::PauseGame	native method	str	void	0x8384	See PauseGame global
+ChocolateFactory::ToggleForeground	static native	()	void	0x87ae	App activate/deactivate hook: pauses the instance with game_paused
+ChocolateFactory::Draw	native method	()	void	0x8030	Window children then base sprite tree at identity inside TBegin2d
+ChocolateFactory::ParseRecipe	native method	TWindowStyle&	void	0x81a4	productName, productCode strings; recipe table values as strings in table order
+dsl:productName	dsl key	string, default ""	-	0x81a4	Stored only
+dsl:productCode	dsl key	string, default ""	-	0x81a4	Stored only
+dsl:recipe	dsl key	table of strings	-	0x81a4	One entry per ingredient instance; size = number of tray slots and selects image/tray<N> (N 2..6)
+dsl:appearance	dsl key	table	-	0x9414 / LoadAppearance 0x1fcd2	{code=..} -> items/<code>_big; list of names or {name,r,g,b} -> custom/<name> tinted (+ _highlight layer if present)
+dsl:machine	dsl key	string texture name	-	0x9414	Sprite layer 6 at (695,301)
+dsl:countdowntime	dsl key	ms, default 3000	-	0x9414	Lua: 3000
+dsl:gametime	dsl key	ms, default 60000	-	0x9414	Lua: 60000
+dsl:warntime	dsl key	ms, default 8000	-	0x9414	Lua: 10000; whistle once when clock crosses it
+dsl:warnOnMiss	dsl key	bool, default false	-	0x9414	Lua: Player.rank<=1 and product.code=="b01"
+dsl:conveyortime	dsl key	ms, default 1200	-	0x9414	Time for train head to traverse the conveyor curve at scale 1
+dsl:conveyorcount	dsl key	uint, default 5	-	0x9414	Slots; spacing=1/count; refill cooldown = conveyortime/count
+dsl:conveyorpath	dsl key	table of {x,y} (3n+1 Bezier points)	-	0x9414	Gun sits at its end point
+dsl:colorcount	dsl key	uint8, default 1	-	0x9414	Colours 1..colorcount assigned to queue ingredients when >1
+dsl:rainbow	dsl key	bool, default false	-	0x9414	Allows colour 0 (wild) ingredients; no shipped award sets it
+dsl:producttime	dsl key	ms, default 3000	-	0x9414	Belt travel time of finished goods
+dsl:productpath	dsl key	table of {x,y}	-	0x9414	Box sprites placed at its end point
+dsl:speedup	dsl key	number, default 1.1	-	0x9414	Tray speed multiplier per completed tray; Lua never passes it
+dsl:maxspeed	dsl key	number, default 8	-	0x9414	Tray speed cap; Lua never passes it
+dsl:traytime	dsl key	ms, default 30000	-	0x9414	One lap at scale 1
+dsl:trayend	dsl key	number, default 0	-	0x9414	Tray delivery point (curve parameter); Lua never passes it
+dsl:traycount	dsl key	uint, default 5	-	0x9414	Lua never passes it, so 5 trays (categories.lua traycount=7 is unused)
+dsl:traypath	dsl key	table of {x,y}	-	0x9414	Trays at phase offset i/traycount
+dsl:gunspeed	dsl key	ms, default 250	-	0x9414	Flight time of a shot over 1000 px
+dsl:ringspeed	dsl key	ms, default 500	-	0x9414	Flight time of a bonus ring
+dsl:missed	dsl key	table of {x,y}	-	0x9414	Divot slots; count = misses that end the game (8)
+dsl:recycler	dsl key	bool, default false	-	0x9414	Needs recyclerpath
+dsl:recyclerpath	dsl key	table of {x,y}	-	0x9414	Bin path
+dsl:recyclertime	dsl key	ms, default 20000	-	0x9414	Bin lap time
+IngredientQueue::IngredientQueue	native method	(recipe, uint8 colorCount, curve, uint count, baseSprite)	-	0x26160	spacing=1/count; head=0
+IngredientQueue::FillQueue	native method	(uint 5)	void	0x26c2a	5 copies of each recipe entry, colour RandRange(rainbow?0:1,colorCount) if colorCount>1, naive swap shuffle, consumed from vector back
+IngredientQueue::Update	native method	float dt (fraction of conveyortime)	void	0x26f1a	head=min(1,head+dt); place list at head-k*spacing; spawn while remainder>0; pistons follow
+IngredientQueue::PopConveyor	native method	()	IngredientRef or null	0x2721c	Returns front only if head==1.0 exactly; then head-=spacing
+IngredientQueue::PeekConveyor	native method	()	IngredientRef or null	0x272a8	Front or null
+IngredientQueueTask::Animate	native method	()	bool	0x271de	Update(AnimateDelta(conveyortime))
+ChocolateGunTask::Fire	native method	TPoint	bool	0xd9f0	Pop conveyor (null -> false); direction normalize*1000; FlyingIngredient start=gun pos; plays gun DoAnim; posts sound launch (0x3ea)
+ChocolateGunTask::Animate	native method	()	bool (1)	0xd628	dt=AnimateDelta(gunspeed); per shot: segment-vs-tray circle (radius+16), recycler point test (radius+16), HitTray/HitRecycler, Die at t==1
+FlyingIngredient::Tick	native method	float dt	float t	0x2268e	t+=dt clamp 1; pos=start+direction*t; returns t (distance is 0)
+Ingredient::Die	native method	()	bool (true)	0x2730a	Sends MissedIngredientMessage (0x3eb) to top-modal child "FactoryGame"
+Ingredient::HitTray	native method	ChocolateTrayRef	bool (true)	0x27450	tray.AddIngredient(self)
+Ingredient::HitRecycler	native method	RecyclerRef	bool (true)	0x273ee	recycler.AddIngredient(self)
+Ingredient::SetColor	native method	uchar	void	0x26930	Ring child image/item_ring (rainbow texture for 0), tint kFactoryColors[c]
+ChocolateTray::CanAccept	native method	IngredientRef	bool	0xe54a	True if a slot i with recipe[i]==name is empty (colour ignored)
+ChocolateTray::AddIngredient	native method	IngredientRef	bool	0xfa44	First matching empty slot; colour rules; full tray sends 0x3f0, and for colour match 0x3f1+0x3ed + immediate Clear; posts sound names
+ChocolateTray::Update	native method	float t	void	0xf5ac	phase=frac(t+offset); curve position; when crossing endpoint with fillCount==N sends 0x3ec to FactoryGame and Clear(true)
+ChocolateTray::Clear	native method	bool animate	void	0xf3a6	Empties slots, fillCount=0, colour 0, hides ring, powerup DoAnim, radius 75, identity matrix
+ChocolateTray::SetColor	native method	uchar	void	0xe48c	Recolours slot ingredients, ring tint/visibility (hidden for 0)
+ChocolateTray::GetSlotPosition	native method	(uint i, uint n)	TVec2	0xe330	(sin(2*pi*i/n)*50, -cos(2*pi*i/n)*50)
+ChocolateTray::Scale	native method	float	void	0xe41e	radius*=f and matrix scale (only used by unreachable EnlargeIngredient)
+ChocolateTrayTask::Animate	native method	()	bool	0xf836	Animate; T=GetT(traytime); update trays; if all trays full: sound ingredient_complete_full_bonus, Clear all, 0x3ed per tray
+ChocolateTrayTask::AnyFull	native method	()	bool	0xe67e	True if any tray has fillCount==N
+ChocolateProductQueueTask::AddProduct	native method	baseSprite	void	0xe1f4	New ChocolateProduct at curve start; BuildItemAppearance scale 0.5
+ChocolateProductQueueTask::Animate	native method	()	bool	0xdfa4	t+=AnimateDelta(producttime); at t>=1 send 0x3ef to FactoryGame, post sound chocolate_counted, erase; stops loop at first product with t<0.1
+Recycler::AddIngredient	native method	IngredientRef	bool (true)	0x3404e	DoAnim, remove sprite, sound recycler, TGameState "++RecycleCount"
+Recycler::Update	native method	float t	void	0x33c42	Position on recycler curve at frac(t)
+Recycler::CanAccept	native method	IngredientRef	bool (true)	0x33c24	Always true; radius 72
+FlyingRingStartMessage::Initiate	native method	(FlyingRingTask*, TVec2 target)	void	0x22c28	One FlyingRing per recipe slot from slot global position to target; ChocolateFactory passes (689,555)
+FlyingRing::Update	native method	float dt	bool	0x227e4	t+=dt clamp 1; false at arrival
+FlyingRingTask::Animate	native method	()	bool	0x2888c	dt=AnimateDelta(ringspeed); on arrival sends 0x3ee to FactoryGame and erases
+TScalingTask::Tick/Animate/Reset/Restart/Pause/AnimateDelta	native method	see md 2.2	-	0x348c6 0x34872 0x348e6 0x3490e 0x348ba 0x34950	time += (taskClock-lastClock)*scale; AnimateDelta = phase delta over one period
+TCurve::GetPoint	native method	(float t, TVec2* tangent opt)	TVec2	0x1cd46	Arc-length parameterised cubic Bezier chain; flatten tolerance 0.2 (_ACCEPTABLE_ERROR); t<=0 start, t>=1 end point index ((n-1)/3)*3
+LoadAppearance	native function	(TLuaTable, vector<str>&, vector<TColor>&)	void	0x1fcd2	See md 3.4
+BuildItemAppearance	native function	(TSprite, names, tints, float scale)	void	0x1fff4	Layer sprites + optional _highlight
+msg:0x3e9 kAppDeactivate	message	-	-	ChocolateFactory::OnMessage 0xcce8	Pause with game_paused
+msg:0x3ea kSoundEvent	message	name = sound event	-	TSoundHandler::OnMessage 0x38ba4	Forwarded to BSGSoundEvent(name); posted via PostWindowMessage
+msg:0x3eb kMissedIngredientEvent	message	MissedIngredientMessage{ingredient}	-	0xcce8 -> MissedIngredient	Sent to FactoryGame by Ingredient::Die
+msg:0x3ec kManufactureProductEvent	message	-	-	0xcce8	machineTime=1 if 0, sound snatch, then (fall-through, inference) same as 0x3ed. Sent by a full tray crossing its end point
+msg:0x3ed kProduceProductEvent	message	-	-	0xcce8	AddProduct to belt
+msg:0x3ee kCountBonusProductEvent	message	-	-	0xcce8	bonusScore+=1 then score+=1 (from rings)
+msg:0x3ef kCountProductEvent	message	-	-	0xcce8	score+=1; score Text "%lu"; sent when a product reaches belt end
+msg:0x3f0 kFillTrayEvent	message	-	-	0xcce8	tray scale*=speedup, capped at maxspeed; sent to top modal on tray full (reaches factory as modal default focus)
+msg:0x3f1 kColorMatchEvent	message	FlyingRingStartMessage{tray,color}	-	0xcce8	Initiate rings to (689,555)
+state:ChocolateFactoryTime	TGameState key	"restart" / 1 / 0	-	StartGame 0xd1d6, ResumeGame, PauseGame	No reader in shipped Lua
+state:RecycleCount	TGameState key	0 then ++ per recycled shot	-	0xd1d6, Recycler::AddIngredient 0x3404e	No reader in shipped Lua
+global:gPauseText	lua global (set by native)	string	-	PauseGame 0x8384	Read then cleared by ui/game_pause.lua
+ui:ui/game_pause.lua	ui script loaded by native	gPauseText	-	PauseGame 0x8384	Fills sibling "information"; ok button = ResumeGame
+ui:ui/chocolate_gameover.lua	ui script loaded by native	GetScore()	CloseWindow(score)	SetGameState(5) 0xbc48	Buttons try_again (StartGame) and ok (CloseWindow(score)); result is the weekly production
+ui:ui/chocolate_factory.lua	lua dialog	gDialogTable.product, gDialogTable.factory	DisplayDialog result = score or nil	Product:RunMinigame (sim/product.lua)	nil (cancel) -> -1 -> no change; score>=0 -> factory:SetProduction(product,score), TickSim(1)
+sound:event names	sound events	chocolate_making_game_intro, chocolate_making_game, chocolate_making_game_outro, clock_tick, start_bell, whistle, launch, snatch, ingredient_success_N, ingredient_color_match_N, ingredient_complete, ingredient_complete_colormatch, ingredient_complete_full_bonus, chocolate_counted, recycler, ingredient_failure_N, ingredient_failure_factory shutdown, game_over	-	various	Names only
+const:factory colours	data	kFactoryColors[5] RGBA floats	-	0x1ab9fe static init	0 (1,1,1,1) rainbow ring; 1 (0.9216,0.0549,0.0549,1); 2 (0.1765,0.2196,0.7725,1); 3 (1,0.8196,0.0902,1); 4 (1,1,1,1)
+const:radii	data	tray 75, tray hit +16, recycler 72, recycler hit +16	-	0xed14, 0x33d8c, 0xd628	
+const:shot	data	direction length 1000 px over gunspeed 250 ms	-	0xd9f0	4 px per ms
+const:ring target	data	(689,555)	-	0xcce8 case 0x3f1	
+const:end decay	data	scale*0.95 per tick until <0.05; ENDING full-tray fast-forward scale 5.0; miss factor 0.5; machine anim 400 ms per revolution	-	0xc180, 0xbc48, 0xcac4	
