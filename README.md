@@ -1,7 +1,8 @@
 # OpenConche — a new engine for the Chocolatier games
 
 A modern, open source, cross-platform engine for running Chocolatier,
-Chocolatier 2: Secret Ingredients, Chocolatier: Decadence by Design.
+Chocolatier 2: Secret Ingredients, Chocolatier: Decadence by Design, and the
+spin-off The Great Chocolate Chase.
 
 ## Why?
 
@@ -16,7 +17,11 @@ and monitors, e.g. when using Steam streaming. When the game does run it
 doesn't look the best, the game is rendered at 800x600 resolution and then
 optionally scaled to fullscreen.
 
-This project allows you to run all three games on modern platforms, and renders
+The Great Chocolate Chase: A Chocolatier Twist (PlayFirst, 2008) is a
+shop-management spin-off built on the same engine SDK. I had never heard of it
+until I came across it, and figured I might as well add support for it.
+
+This project allows you to run all four games on modern platforms, and renders
 natively at any resolution. The game art is only available for the 800x600
 resolution so is still scaled up, but the text renders at your native size,
 much improving the overall look.
@@ -65,6 +70,10 @@ every decision is checkable. It is released so that it exists somewhere public:
   <img src="docs/screenshots/choc2-san-francisco.png" width="49%" alt="San Francisco in Chocolatier 2">
   <img src="docs/screenshots/choc2-factory.png" width="49%" alt="The Chocolatier 2 factory mini-game">
 </p>
+<p align="center">
+  <img src="docs/screenshots/greatcc-title.png" width="49%" alt="The Great Chocolate Chase: A Chocolatier Twist, main menu">
+  <img src="docs/screenshots/greatcc-shop.png" width="49%" alt="Serving customers in The Great Chocolate Chase">
+</p>
 
 The fonts render at the real window resolution, here at 2x, while the art stays 800x600:
 
@@ -112,15 +121,15 @@ created in one won't appear in the other.
 ## Questions
 
 - **Will it run other PlayFirst games?** It could, but I’m not going to add
-  support myself. The three Chocolatier games are the only targets, and nothing
+  support myself. The Chocolatier games and The Great Chocolate Chase are the only targets, and nothing
   else is planned.
 
-  The engine implements the parts of the Playground SDK used by those three
+  The engine implements the parts of the Playground SDK used by those
   games, so it could provide a good starting point for porting another game built
   on the same SDK (e.g. Diner Dash 2 or Dream Chronicles). However, this doesn’t
   mean those games will work out of the box. You’d still need to implement the
   game-specific code, and potentially extend the engine with SDK functionality
-  that Chocolatier doesn’t use. The per-game modules in `src/games/` are where that
+  that those games don’t use. The per-game modules in `src/games/` are where that
   work would go (see `docs/design/engine-and-games.md`). You’ll have to fork the
   project and bring your own AI agent :)
 - **What is a conche?**
@@ -134,6 +143,9 @@ created in one won't appear in the other.
   Decadence by Design* were created by **Big Splash Games** and published by
   **PlayFirst**. All original material belongs to its rights holders; this
   project doesn't distribute any of it.
+- *The Great Chocolate Chase: A Chocolatier Twist* was developed by
+  **Zemnott, Inc.** and published by **PlayFirst**, with special thanks to Big
+  Splash Games in its credits.
 - The engine's own code is released under the **MIT license** (`LICENSE`). The
   two third-party files, `stb_image.h` and `stb_vorbis.c`, are public domain.
 - [Chocolatier: Decadence by Design
