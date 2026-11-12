@@ -64,6 +64,10 @@ class Window {
   const std::vector<std::unique_ptr<Window>>& children() const { return children_; }
   // Puts the child at the front (frontmost) and makes this its parent.
   virtual Window& adoptFront(std::unique_ptr<Window> child);
+  // SetWindowDepth(0) / (1): moves this window to the back / front of its siblings (the back is the end of the child list, drawn
+  // first). No-ops without a parent.
+  void sendToBack();
+  void bringToFront();
   // Removes a direct child from the tree and returns it (null if it is not a child).
   std::unique_ptr<Window> orphan(Window& child);
   // Pre-order, depth-first, in list order (front to back); a window matches itself first. An empty name never matches.

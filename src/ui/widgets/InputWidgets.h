@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -53,6 +54,16 @@ class TextEditWindow : public TextWindow {
   // One typed character as OnUTF8Char handles it (`ch` is one UTF-8 character, or "\b" for Backspace). Returns true when
   // the edit took it (inserted, deleted, or swallowed by `ignore`). Posts kTextEditChanged on success.
   bool typeCharacter(std::string_view ch);
+  // The pre-edit hook (TTextEdit::KeyHit's override point): called for every key the edit evaluates, with the key's type (0
+  // insert, 1 edit such as Backspace, 5 reject), its character code (the first byte; 8 for Backspace, 0 when the key has none)
+  // and whether the edit accepted it. It runs while text() still holds the text from before the key.
+  using PreEditHook = std::function<void(int type, int ch, bool accepted)>;
+  void setPreEditHook(PreEditHook hook) { preEdit_ = std::move(hook); }
+  // Runs the hook as a key of this type and character would, without editing (the initial evaluation of a window that
+  // drives another).
+  void evaluateKey(int type, int ch, bool accepted) const {
+    if (preEdit_) preEdit_(type, ch, accepted);
+  }
   // Several characters from one text event.
   bool typeText(std::string_view utf8);
   // The key presses OnKeyDown handles; false when the edit has no use for the key.
@@ -80,6 +91,7 @@ class TextEditWindow : public TextWindow {
   int maxLen_ = 10;
   std::string ignore_, enableWindow_;
   script::LuaRef onKey_;
+  PreEditHook preEdit_;
   unsigned soundSeed_ = 1;
 };
 

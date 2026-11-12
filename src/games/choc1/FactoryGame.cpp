@@ -379,7 +379,8 @@ void FactoryGame::draw(ui::DrawContext& ctx) const {
     for (const double v : sim.products())
       if (v >= 477) drawCentered(ctx, *product_, 700, v);
   if (crateFront_) drawCentered(ctx, *crateFront_, 695, 537);
-  if (crateLid_) drawCentered(ctx, *crateLid_, 693.5, 504);
+  // The lid is drawn only with nothing in transit (docs/re/choc-factory-game.md, crate step), so it is open for a falling product.
+  if (crateLid_ && sim.products().empty()) drawCentered(ctx, *crateLid_, 693.5, 504);
   if (product_) drawCentered(ctx, *product_, 699, 548);
   // 7. the missed panel: a cell and the wasted ingredient on it, four to a row.
   for (int n = 0; n < static_cast<int>(sim.missedIngredients().size()) && n < 8; ++n) {

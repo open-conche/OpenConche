@@ -19,6 +19,7 @@
 #include "app/Finder.h"
 #include "app/ScriptDriver.h"
 #include "assets/AssetFS.h"
+#include "assets/Content.h"
 #include "audio/Audio.h"
 #include "audio/Prefs.h"
 #include "games/Registry.h"
@@ -182,6 +183,23 @@ void drawTestScene(gfx::Renderer &r, const SceneTextures *tex) {
   r.fillRect({600, 420, 20, 20}, {1, 0, 1, 1},
              gfx::Blend::Opaque); // still clipped to the outer rectangle
   r.popClip();
+}
+
+// The window title: the profile's string-table entry when it has one (read from the mounted game's own table, before the
+// script host exists), else the profile's fixed title.
+std::string windowTitleFor(const script::GameModule &module,
+                           const assets::AssetFS *fs) {
+  const script::GameProfile &p = module.profile();
+  if (*p.titleString && fs) {
+    assets::StringTable table;
+    if (table.loadFile(*fs, p.stringsPath, assets::StringTable::Layer::Sdk,
+                       nullptr)) {
+      std::string title = table.sdkLookup(p.titleString);
+      if (!title.empty())
+        return title;
+    }
+  }
+  return p.windowTitle;
 }
 
 bool readFile(const std::string &path, std::string &out) {
@@ -471,7 +489,7 @@ int Session::setup() {
   cfg.headless = o.headless;
   cfg.displayWidth = o.displayWidth;
   cfg.displayHeight = o.displayHeight;
-  cfg.title = gameModule->profile().windowTitle;
+  cfg.title = windowTitleFor(*gameModule, assetFs.get());
   window.emplace(*sdl, cfg);
   if (!window->ok()) {
     diag::err("%s\n", window->error().c_str());
@@ -561,6 +579,7 @@ int Session::setup() {
         audioTable ? *audioTable : audio::EventTable::empty(),
         nullptr, seed + 3);
     scriptCtx->audio = audioSvc.get();
+    audioSvc->setSquaredGain(gameModule->profile().squaredGain);
     // Headless output is discarded, so music streams only count their frames
     // (same timing, no Vorbis decoding).
     audioSvc->setSkipDecode(o.headless);
@@ -597,6 +616,14 @@ int Session::setup() {
       if (!haveCadi)
         scriptLog.write("[audio] cadi/audio/ not found (vanilla data): CADI "
                         "events are silent");
+    }
+    // The machine library's original-bug switch (games.cfg `fixbugs`, docs/design/greatcc.md section 7) goes in below
+    // the --config overrides; automated runs never read the library, so they keep the default (on).
+    if (!isAutomatedRun(o)) {
+      GameLibrary library;
+      std::string libraryError;
+      loadGameLibrary(library, libraryError);
+      scriptConfig.set("fixbugs", library.fixBugs ? "1" : "0");
     }
     for (const auto &[k, v] : o.configOverrides)
       scriptConfig.override(k, v);
@@ -635,7 +662,8 @@ int Session::setup() {
     // main loop sets cursor/cursor and 2's Main image/cursor right after the
     // window title, hotspot (1,1) - the whole game runs with the skinned arrow.
     if (const char *bootCursor = gameModule->profile().bootCursor; *bootCursor)
-      (void)scriptCtx->setCursor(bootCursor, 1, 1);
+      (void)scriptCtx->setCursor(bootCursor, gameModule->profile().bootCursorHotX,
+                                 gameModule->profile().bootCursorHotY);
     scriptCtx->toggleFullscreen = [this, ctx = scriptCtx.get()] {
       if (!window->toggleFullscreen())
         return false;

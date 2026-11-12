@@ -382,13 +382,19 @@ bool UserStore::setGlobalPref(const std::string& key, const std::string& value) 
   return saveGlobalPrefs();
 }
 
-bool UserStore::logScore(double score, std::string_view a, std::string_view b) {
+bool UserStore::logScore(double score, std::string_view a, std::string_view b, const std::string& mode) {
   if (current_ < 0) return true;  // a score needs a player to belong to
-  if (!hiscores_.record(hiscoreMode(), currentName(), score, a, b)) return true;
+  if (!hiscores_.record(mode.empty() ? hiscoreMode() : mode, currentName(), score, a, b)) return true;
   return !persistent() || writeAtomic("hiscore.dat", hiscores_.serialize());
 }
 
 bool UserStore::writeFile(const std::string& rel, std::string_view data) const { return writeAtomic(rel, data); }
+
+std::optional<std::string> UserStore::readFile(const std::string& rel) const {
+  std::string out;
+  if (!persistent() || !readWhole(rel, out)) return std::nullopt;
+  return out;
+}
 
 std::vector<std::string> UserStore::listFiles(std::string_view suffix) const {
   std::vector<std::string> out;

@@ -272,6 +272,7 @@ void WindowManager::handle(const Message& m) {
     quit_ = true;
     return;
   }
+  if (messageHook_ && m.type >= hookMin_ && m.type <= hookMax_ && messageHook_(m)) return;
   if (!listeners_.empty()) notifyListeners(m);
   Window* target = window(m.target);
   if (!target) target = window(focus_);
@@ -314,6 +315,7 @@ bool WindowManager::isShown(std::string_view name) const {
 void WindowManager::draw(gfx::Renderer& renderer) const {
   DrawContext ctx{renderer, {0, 0}, 1.0f};
   for (const auto& m : modals_) drawWindow(*m, ctx);
+  if (overlayDrawer_) overlayDrawer_(ctx);
 }
 
 namespace {

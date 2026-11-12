@@ -52,6 +52,26 @@ class Audio {
   bool musicPlaying() const { return musicTrack_ != nullptr; }
   // Stops the music track with a fade; logs nothing itself (stopMusic adds the "music stop" line).
   void stopMusicTrack(float fadeMs);
+  // --- Voice handles (generic: a file played as one voice that the caller can steer; the Great Chocolate Chase's sound
+  // manager is built on them). A handle is a positive int that is never reused; 0 means "no voice". ---
+  using VoiceHandle = int;
+  // Starts `path` as a voice in `group`, looping or not, at `gain` (a per-voice factor on top of the group level). `cached`
+  // false decodes the file afresh and frees it when the voice ends (music: a 90 s track is not kept). Logs
+  // "[audio] voice <path> group=<g> loop=<0|1>". Returns 0 for a missing or undecodable file (the cache logs it once) or
+  // when all voices are busy.
+  VoiceHandle playVoice(const std::string& path, Group group, bool loop, float gain = 1.0f, bool cached = true);
+  void setVoiceGain(VoiceHandle h, float gain);
+  void stopVoice(VoiceHandle h);                // at once; an unknown or finished handle does nothing
+  void pauseVoice(VoiceHandle h, bool paused);  // freezes this voice only; the others and the music are unaffected
+  // True when the voice ended (played out, stopped) or the handle is unknown (0, never issued, already swept).
+  bool voiceDone(VoiceHandle h) const;
+  int voiceCount() const { return static_cast<int>(voices_.size()); }
+
+  // The squared gain curve (Great Chocolate Chase: gain = (master x level)^2, docs/re/greatcc-audio.md s.4); the other
+  // games keep the level itself. Takes effect at once.
+  void setSquaredGain(bool squared);
+  bool squaredGain() const { return squared_; }
+
   // One draw from the audio RNG stream, in [0, 1).
   double uniform();
   void log(const std::string& line);
@@ -121,6 +141,7 @@ class Audio {
 
   float sfx_ = 0.75f, music_ = 0.65f, env_ = 0.5f;  // levels
   bool muted_ = false;
+  bool squared_ = false;
   bool focusPaused_ = false, gamePaused_ = false;
 
   std::set<std::string> unknownLogged_;
@@ -141,6 +162,16 @@ class Audio {
   };
   std::map<int, int> lastPick_;  // OneshotRandom: 1 + the child picked last time (0 = none), per event index
   std::map<int, std::vector<Child>> children_;
+
+  struct VoiceRec {
+    int slot = -1;
+    uint32_t serial = 0;
+    const Pcm* pcm = nullptr;
+    std::unique_ptr<Pcm> owned;  // set when the voice was started uncached
+  };
+  bool voiceLive(const VoiceRec& r) const;
+  std::map<VoiceHandle, VoiceRec> voices_;
+  VoiceHandle nextVoice_ = 1;
 
   // Environment: the bed's event index and the sweetener timer, in audio time (ms).
   int envIndex_ = -1;

@@ -40,6 +40,8 @@ LuaStyle::~LuaStyle() {
   if (owns_) lua_settop(L_, table_ - 1);
 }
 
+LuaRef LuaStyle::tableRef() const { return state_ ? LuaRef(*state_, L_, table_) : LuaRef(); }
+
 bool LuaStyle::lookup(const char* key) const {
   if (getField(L_, table_, key)) return true;
   if (plain_) return false;
@@ -244,6 +246,29 @@ void LuaStyle::forEachNumber(const std::function<void(const std::string&, double
   while (lua_next(L_, table_) != 0) {
     // Only a string key is read as one: lua_tostring on a number key would convert it in place and confuse lua_next.
     if (lua_type(L_, -2) == LUA_TSTRING && lua_type(L_, -1) == LUA_TNUMBER) fn(lua_tostring(L_, -2), lua_tonumber(L_, -1));
+    lua_pop(L_, 1);
+  }
+}
+
+void LuaStyle::forEachEntry(const EntryFn& fn) const {
+  lua_pushnil(L_);
+  while (lua_next(L_, table_) != 0) {
+    // Only a string key is read as one (lua_tostring on a number key would convert it in place and confuse lua_next).
+    if (lua_type(L_, -2) == LUA_TSTRING) {
+      const std::string key = lua_tostring(L_, -2);
+      if (lua_istable(L_, -1)) {
+        const LuaStyle view(L_, lua_gettop(L_), state_, true, false);
+        fn(key, &view, std::nullopt);
+      } else if (lua_type(L_, -1) == LUA_TSTRING || lua_type(L_, -1) == LUA_TNUMBER) {
+        // A number value is converted on a copy, so the stack's value stays a number.
+        lua_pushvalue(L_, -1);
+        const std::string text(lua_tostring(L_, -1), lua_strlen(L_, -1));
+        lua_pop(L_, 1);
+        fn(key, nullptr, text);
+      } else {
+        fn(key, nullptr, std::nullopt);
+      }
+    }
     lua_pop(L_, 1);
   }
 }

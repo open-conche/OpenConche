@@ -1,0 +1,33 @@
+<achievements>
+  <achievementcategory name="zeta">
+    <achievement name="Zed">
+      <title>t</title>
+      <threshold>1</threshold>
+      <compare>>=</compare>
+      <value>num_bars</value>
+    </achievement>
+  </achievementcategory>
+  <achievementcategory name="alpha">
+    <achievement name="B">
+      <threshold>5</threshold>
+      <compare>greaterthan + equal</compare>
+      <value>num_bars</value>
+    </achievement>
+    <achievement name="A">
+      <threshold>2</threshold>
+      <compare>greaterthan</compare>
+      <value>num_bars</value>
+    </achievement>
+    <achievement name="med">
+      <threshold>1</threshold>
+      <compare>>=</compare>
+      <value>completed_iquitos</value>
+      <medal>chase_iquitos</medal>
+    </achievement>
+  </achievementcategory>
+  <achievement name="Loose">
+    <threshold>100</threshold>
+    <compare>lessthan</compare>
+    <value>total_worth</value>
+  </achievement>
+</achievements>

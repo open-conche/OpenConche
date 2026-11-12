@@ -182,7 +182,7 @@ bool ScriptHost::boot() {
   ctx_.config.set("hiscorelocal", "1");
   {
     assets::Warnings warnings;
-    ctx_.strings.loadFile(ctx_.fs, "strings.xml",
+    ctx_.strings.loadFile(ctx_.fs, module.profile().stringsPath,
                           assets::StringTable::Layer::Sdk, &warnings);
     for (const auto &w : warnings)
       ctx_.log.write("[content] " + w);
@@ -277,7 +277,27 @@ void ScriptHost::resume(int nargs) {
   } else {
     state_ = pendingYield_;
     lua_settop(co_, 0); // the yielded values
+    if (state_ != CoState::Suspended)
+      suspendToken_ = 0;
   }
+}
+
+ScriptHost::Suspension ScriptHost::suspend(lua_State *L) {
+  if (L != co_ || !canYield(L))
+    return {};
+  pendingYield_ = CoState::Suspended;
+  suspendToken_ = ++nextToken_;
+  return {suspendToken_};
+}
+
+bool ScriptHost::resume(const Suspension &s, bool value) {
+  if (!s.valid() || s.token != suspendToken_ || state_ != CoState::Suspended ||
+      !co_)
+    return false;
+  suspendToken_ = 0;
+  lua_pushboolean(co_, value ? 1 : 0);
+  resume(1);
+  return true;
 }
 
 void ScriptHost::tick(double nowMs) {
@@ -297,7 +317,8 @@ std::string ScriptHost::diagnose() {
   static const char *const kNames[] = {
       "not started", "running (inside a resume)",
       "suspended in WaitForMessage (HandleGetMessage)",
-      "suspended in a plain yield (Pause/Yield)", "dead"};
+      "suspended in a plain yield (Pause/Yield)", "dead",
+      "suspended by a native (waiting for a resume)"};
   char buf[256];
   std::string out =
       std::string("Main coroutine: ") + kNames[static_cast<int>(state_)];
@@ -377,6 +398,7 @@ void ScriptHost::deliver(const ui::Message *message, const LuaRef *command) {
     break;
   }
   case CoState::Yielded:
+  case CoState::Suspended: // suspended in a native is a plain yield to the message pump
     if (command)
       callProtected(*command); // a plain Yield: the message is dropped
     break;

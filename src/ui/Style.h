@@ -76,6 +76,11 @@ class Style {
   // Calls `fn` with the name and value of every entry that has a string key and a number value (a map such as a recipe
   // `{sugar = 1}`), in no particular order.
   virtual void forEachNumber(const std::function<void(const std::string&, double)>& fn) const { (void)fn; }
+  // Calls `fn` for every entry that has a string key (the array part is not visited): `table` is a view of the value when it
+  // is a table (else null), `text` the value as text when it is a string or a number. Used for tables whose keys name
+  // things (`children`, `assets`) and for the loose attributes of a game object.
+  using EntryFn = std::function<void(const std::string& key, const Style* table, const std::optional<std::string>& text)>;
+  virtual void forEachEntry(const EntryFn& fn) const { (void)fn; }
 
   bool booleanOr(const char* key, bool def) const { return boolean(key).value_or(def); }
   double numberOr(const char* key, double def) const { return number(key).value_or(def); }
@@ -114,6 +119,7 @@ class MapStyle : public Style {
   std::optional<std::string> stringAt(int i) const override;
   void forEachTable(const std::function<void(const Style&)>& fn) const override;
   void forEachNumber(const std::function<void(const std::string&, double)>& fn) const override;
+  void forEachEntry(const EntryFn& fn) const override;
 
  private:
   std::map<std::string, Value> values_;

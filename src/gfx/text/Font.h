@@ -124,11 +124,15 @@ class FontCache {
   std::shared_ptr<const Font> builtin();
   // `fonts/default.mvec` through the same chain: where glyphs missing from a run's font are looked up.
   std::shared_ptr<const Font> defaultFont();
+  // The font at the end of the chain, in place of the built-in one: the original has a font compiled into its executable
+  // there (RE 1.8), and a game whose code names a font file that does not exist draws with it.
+  void setEmbedded(std::shared_ptr<const Font> font) { embedded_ = std::move(font); }
   std::size_t size() const { return cache_.size(); }
 
  private:
   const assets::AssetFS* fs_;
   std::map<std::string, std::shared_ptr<const Font>> cache_;
+  std::shared_ptr<const Font> embedded_;
 };
 
 }  // namespace choco::gfx::text

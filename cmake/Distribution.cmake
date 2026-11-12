@@ -18,8 +18,12 @@ set(CHOCO_DIST_DIR "${CMAKE_BINARY_DIR}/dist")
 
 # ---- Per-platform shape of the executable ----
 if(APPLE)
+  set(CHOCO_ICNS "${CMAKE_SOURCE_DIR}/packaging/icon/OpenConche.icns")
+  set_source_files_properties("${CHOCO_ICNS}" PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+  target_sources(openconche PRIVATE "${CHOCO_ICNS}")
   set_target_properties(openconche PROPERTIES
     OUTPUT_NAME "OpenConche"
+    MACOSX_BUNDLE_ICON_FILE "OpenConche.icns"
     MACOSX_BUNDLE TRUE
     MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/packaging/Info.plist.in"
     MACOSX_BUNDLE_BUNDLE_NAME "OpenConche"

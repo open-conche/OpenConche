@@ -132,6 +132,9 @@ class WindowManager : public WindowQuery {
   // test with fall-through to the sibling behind and then the parent), key events to the focus window and up, then the
   // modal's hotkeys. An event nobody handled that reaches the modal posts kPressAnyKey unless `overlaymouse` is on.
   void handleInput(const InputEvent& ev);
+  // A filter that sees every input event before the windows do (and before the escape hook); returning true consumes the
+  // event. Empty = none. A game that blocks input while an overlay plays installs one.
+  void setInputFilter(std::function<bool(const InputEvent&)> f) { inputFilter_ = std::move(f); }
   // Chocolatier 2 era window system (TWindow::HandleEvent, C2 0x34028): when an unhandled mouse event falls through to
   // the sibling behind, that sibling's children are searched with the point still in the PARENT's coordinates (0x3412b
   // picks the sibling, 0x3414f searches its children, 0x34170-0x34194 descends subtracting only the child's offset).
@@ -222,6 +225,11 @@ class WindowManager : public WindowQuery {
   using MessageListener = std::function<void(const Message&)>;
   void addMessageListener(WindowId owner, int type, MessageListener fn) { listeners_.push_back({owner, type, std::move(fn)}); }
   std::size_t messageListenerCount() const { return listeners_.size(); }
+  // A consuming hook for the message types minType..maxType: called first for each handled message of those types (before the
+  // listeners and the window climb); returning true consumes it. One hook; empty = none.
+  void setMessageHook(int minType, int maxType, std::function<bool(const Message&)> f) {
+    hookMin_ = minType, hookMax_ = maxType, messageHook_ = std::move(f);
+  }
   // SendWindowMessage: handles a message now, without queueing it (the window climb, then the script).
   void sendMessage(const Message& m) { handle(m); }
   // Handles queued messages in order (handlers may post more; those run in the same pass), at most kMaxDispatch per call.
@@ -274,6 +282,9 @@ class WindowManager : public WindowQuery {
   // ---- drawing ----
   // Draws every modal from the Screen up to the top one, each as drawWindow does.
   void draw(gfx::Renderer& renderer) const;
+  // Called at the end of draw, after the whole modal stack, with an unclipped full-screen context: whatever must cover
+  // every window (a game's transition overlays). Empty = none.
+  void setOverlayDrawer(std::function<void(DrawContext&)> f) { overlayDrawer_ = std::move(f); }
 
   // The tree as text: one line per window, children indented, rects in parent coordinates.
   std::string dump() const;
@@ -344,6 +355,10 @@ class WindowManager : public WindowQuery {
   unsigned typingCount_ = 0;
   std::function<void(const std::string&, float)> volume_;
   ScriptSink* sink_ = nullptr;
+  std::function<bool(const InputEvent&)> inputFilter_;
+  std::function<bool(const Message&)> messageHook_;
+  int hookMin_ = 0, hookMax_ = -1;
+  std::function<void(DrawContext&)> overlayDrawer_;
   double nowMs_ = 0;
   bool quit_ = false;
   bool overflow_ = false;

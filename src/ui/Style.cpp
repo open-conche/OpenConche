@@ -1,5 +1,7 @@
 #include "ui/Style.h"
 
+#include <cstdio>
+
 namespace choco::ui {
 
 std::optional<double> MapStyle::number(const char* key) const {
@@ -41,6 +43,22 @@ std::optional<std::vector<std::string>> MapStyle::strings(const char* key, int c
   std::vector<std::string> out(static_cast<std::size_t>(count));
   for (std::size_t i = 0; i < out.size() && i < v->size(); ++i) out[i] = (*v)[i];
   return out;
+}
+
+void MapStyle::forEachEntry(const EntryFn& fn) const {
+  for (const auto& [k, v] : values_) {
+    if (auto* t = std::get_if<std::shared_ptr<MapStyle>>(&v)) {
+      if (*t) fn(k, t->get(), std::nullopt);
+    } else if (auto* d = std::get_if<double>(&v)) {
+      char buf[64];
+      std::snprintf(buf, sizeof buf, "%g", *d);
+      fn(k, nullptr, std::string(buf));
+    } else if (auto* str = std::get_if<std::string>(&v)) {
+      fn(k, nullptr, *str);
+    } else {
+      fn(k, nullptr, std::nullopt);
+    }
+  }
 }
 
 }  // namespace choco::ui

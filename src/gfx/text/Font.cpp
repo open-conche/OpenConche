@@ -414,7 +414,7 @@ std::shared_ptr<const Font> FontCache::get(std::string_view name) {
       if (key != "fonts/default.mvec") font = tryLoad("fonts/default.mvec");
     }
   }
-  if (!font) font = builtinFont();
+  if (!font) font = embedded_ ? embedded_ : builtinFont();
   cache_[key] = font;
   return font;
 }

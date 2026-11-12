@@ -91,6 +91,8 @@ class Rng {
   // [0, 1) from two raw mt19937 words. The engine's output is specified bit-exactly by the standard, but
   // std::uniform_real_distribution is not, so this keeps seeded runs identical across libc++, libstdc++ and MSVC.
   double uniform() { return unit(gen_); }
+  // One raw 32-bit word of the game stream (the original's `Rand32`).
+  std::uint32_t next32() { return gen_(); }
 
  private:
   static double unit(std::mt19937& g) {

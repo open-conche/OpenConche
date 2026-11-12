@@ -169,7 +169,7 @@ ParseResult parseArgs(const std::vector<std::string>& args) {
     else if (a == "--pick-game") {
       if (!value(o.pickGame)) return r;
       if (!findFinderVariant(o.pickGame)) {
-        r.error = "--pick-game must be choc1, choc2, choc3 or choc3-reforged, got '" + o.pickGame + "'";
+        r.error = "--pick-game must be choc1, choc2, choc3, choc3-reforged or greatcc, got '" + o.pickGame + "'";
         r.shortError = true;
         return r;
       }
@@ -252,7 +252,7 @@ std::string usageText() {
          "  --add-game <folder>        add the game in <folder> to the launcher's list (no window), then exit; for systems\n"
          "                             without a folder dialog. Exit 0 added or already listed, 3 no supported game found\n"
          "  --pick-game <variant>     with --pick-dir: the finder's check without the window, then exit (automated):\n"
-         "  --pick-dir <folder>        choc1, choc2, choc3 or choc3-reforged; exit 0 for a playable folder, 3 if not\n"
+         "  --pick-dir <folder>        choc1, choc2, choc3, choc3-reforged or greatcc; exit 0 for a playable folder, 3 if not\n"
          "  ") + gameOpt + std::string("which game the assets are (default: detected from settings.xml and the scripts)\n"
          "  --userdir <dir>            folder for settings and saves (required with --headless, --script, --frames,\n"
          "                             --screenshot, --dump-windows, --log-unimplemented, --no-assets or --pick-game;\n"

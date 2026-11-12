@@ -1,5 +1,6 @@
 #include "platform/Window.h"
 #include "app/Diagnostics.h"
+#include "platform/WindowIcon.h"
 
 #include <SDL3/SDL.h>
 #ifdef __EMSCRIPTEN__
@@ -108,6 +109,15 @@ Window::Window(Platform& platform, const WindowConfig& config)
     return;
   }
   SDL_SetWindowMinimumSize(impl_->window, kLogicalWidth, kLogicalHeight);
+  if (!headless_) {
+    // Window and (unbundled) Dock icon; a failure only means the OS default shows.
+    if (SDL_IOStream* io = SDL_IOFromConstMem(kWindowIconPng, kWindowIconPngSize)) {
+      if (SDL_Surface* icon = SDL_LoadPNG_IO(io, true)) {
+        SDL_SetWindowIcon(impl_->window, icon);
+        SDL_DestroySurface(icon);
+      }
+    }
+  }
   if (haveUsable && !config.fullscreen) {
     int top = 0, left = 0, bottom = 0, right = 0;
     if (SDL_GetWindowBordersSize(impl_->window, &top, &left, &bottom, &right)) {

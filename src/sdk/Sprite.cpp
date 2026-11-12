@@ -188,6 +188,20 @@ bool Sprite::play(const char* fn, SpriteContext& ctx, double now) {
   return script->play(fn, now);
 }
 
+void Sprite::scriptPause(bool pause, int depth, double now) {
+  if (script) script->setPaused(pause, now);
+  if (depth == 0) return;
+  for (const auto& c : children_) c->scriptPause(pause, depth - 1, now);
+}
+
+bool Sprite::scriptIsPlaying(int depth) const {
+  if (script && script->playing()) return true;
+  if (depth == 0) return false;
+  for (const auto& c : children_)
+    if (c->scriptIsPlaying(depth - 1)) return true;
+  return false;
+}
+
 void Sprite::tickScripts(double now) {
   if (script) script->tick(now);
   for (std::size_t i = 0; i < children_.size(); ++i) children_[i]->tickScripts(now);

@@ -2,6 +2,9 @@
 // the user picked, the validation of a resolved folder against a variant, and the finder.txt preferences.
 #include <doctest/doctest.h>
 
+#include "gfx/text/Font.h"
+#include "gfx/text/TextLayout.h"
+
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -91,7 +94,11 @@ TEST_CASE("the variant table: ids resolve, unknown ids do not") {
   CHECK(vr->reforged == true);
   CHECK(findFinderVariant("dd2") == nullptr);
   CHECK(findFinderVariant("") == nullptr);
-  CHECK(kFinderVariantCount == 4);
+  CHECK(kFinderVariantCount == 5);
+  const FinderVariant* gc = findFinderVariant("greatcc");
+  REQUIRE(gc);
+  CHECK(gc->moduleId == std::string("greatcc"));
+  CHECK(gc->reforged == false);
 }
 
 TEST_CASE("resolveAssetCandidates: the install layouts, best first") {
@@ -211,6 +218,16 @@ TEST_CASE("addGameFromFolder registers once, names the game, and saves") {
   CHECK(reloaded.entries.count("choc3") == 1);
   fs::create_directories(base / "empty");
   CHECK(addGameFromFolder(library, (base / "empty").string()).status == AddGameStatus::NotFound);
+#ifdef CHOCO_GAME_GREATCC
+  // The Great Chocolate Chase from a Mac bundle's Contents/Resources/assets: its settings name it, its main loop makes it playable.
+  put(base / "Chase.app" / "Contents" / "Resources" / "assets" / "settings.xml", "<settings><game>chocolateshop</game></settings>");
+  put(base / "Chase.app" / "Contents" / "Resources" / "assets" / "scripts" / "mainloop.lua", "");
+  const AddGameResult chase = addGameFromFolder(library, (base / "Chase.app").string());
+  CHECK(chase.status == AddGameStatus::Added);
+  CHECK(chase.id == "greatcc");
+  CHECK(library.entries.count("greatcc") == 1);
+  CHECK(library.entries.count("choc3") == 1);  // the other game stays: it is a library
+#endif
   fs::remove_all(base);
 }
 
@@ -408,4 +425,48 @@ TEST_CASE("the game library: parser corners and the finder.txt migration") {
   }
 }
 
+TEST_CASE("the game library: fixbugs is kept by a rewrite, a missing line is on") {
+  const std::string home = tempRoot("library-fixbugs");
+  const SavedHome restore(home);
+  GameLibrary lib;
+  std::string error;
+  REQUIRE(loadGameLibrary(lib, error));
+  CHECK(lib.fixBugs);  // no file: on
+  // A hand-edited file with the switch off, a game entry and a comment.
+  std::error_code ec;
+  fs::create_directories(platform::pathFromUtf8(lib.path).parent_path(), ec);
+  {
+    std::ofstream out(platform::pathFromUtf8(lib.path), std::ios::binary | std::ios::trunc);
+    out << "# comment\nfixbugs = 0\nlast = choc1\nchoc1.dir = /g/c1\nchoc1.assets = /g/c1/assets\n";
+  }
+  GameLibrary loaded;
+  REQUIRE(loadGameLibrary(loaded, error));
+  CHECK_FALSE(loaded.fixBugs);
+  // What the finder does after a pick or an X click: change the entries and save. The switch survives.
+  loaded.entries.erase("choc1");
+  loaded.last.clear();
+  loaded.entries["choc2"] = {"/g/c2", "/g/c2/assets"};
+  REQUIRE(saveGameLibrary(loaded, error));
+  GameLibrary again;
+  REQUIRE(loadGameLibrary(again, error));
+  CHECK_FALSE(again.fixBugs);
+  CHECK(again.entries.count("choc2") == 1);
+  // On is the absence of the line; `fixbugs = 1` reads as on.
+  again.fixBugs = true;
+  REQUIRE(saveGameLibrary(again, error));
+  GameLibrary on;
+  REQUIRE(loadGameLibrary(on, error));
+  CHECK(on.fixBugs);
+}
+
 }  // TEST_SUITE
+
+TEST_CASE("the finder's supported-games line fits its box on one line") {
+  choco::gfx::text::TextStyle st;
+  st.font = choco::gfx::text::builtinFont();
+  st.size = choco::app::kFinderSupportedSize;
+  const auto lay = choco::gfx::text::TextLayout::build(choco::app::kFinderSupportedLine, st, choco::app::kFinderSupportedWidth, 12);
+  MESSAGE("supported line: " << lay.bounds().w << " px of " << choco::app::kFinderSupportedWidth);
+  CHECK(lay.lineCount() == 1);
+  CHECK(lay.drawnLineCount() == 1);
+}

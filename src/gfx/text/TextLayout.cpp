@@ -181,6 +181,7 @@ TextSystem* TextSystem::current() { return g_current; }
 struct TextLayout::Impl {
   std::vector<Line> lines;
   int boxW = 0, boxH = 0;
+  int clipH = 0;  // draw cut-off height; equals boxH unless the caller passes another
   int totalH = 0;
   float yTop = 0;  // block top relative to the window
   int padding = 0;
@@ -473,11 +474,12 @@ const char* const Builder::kTags[] = {"br",     "/p",      "a",     "/a",    "b"
 
 }  // namespace
 
-TextLayout TextLayout::build(std::string_view utf8, const TextStyle& style, int w, int h) {
+TextLayout TextLayout::build(std::string_view utf8, const TextStyle& style, int w, int h, int clipH) {
   TextLayout out;
   Impl& d = *out.impl_;
   d.boxW = w;
   d.boxH = h;
+  d.clipH = clipH < 0 ? h : clipH;
   d.padding = style.padding;
   if (w <= 0 || h <= 0) {
     diag::err("[text] layout into a %dx%d box ignored\n", w, h);
@@ -544,6 +546,15 @@ RectI TextLayout::measure(std::string_view utf8, const TextStyle& style, int w, 
 }
 
 RectI TextLayout::bounds() const { return impl_->bounds; }
+int TextLayout::drawnLineCount() const {
+  int n = 0, i = 0;
+  for (const Line& l : impl_->lines) {
+    const float bottom = static_cast<float>(l.bottom) + static_cast<float>(i++ * impl_->padding);
+    if (bottom > static_cast<float>(impl_->clipH)) break;
+    if (bottom >= 0) ++n;
+  }
+  return n;
+}
 int TextLayout::lineCount() const { return static_cast<int>(impl_->lines.size()); }
 void TextLayout::setHoveredLink(std::string_view id) { impl_->hovered = std::string(id); }
 
@@ -563,7 +574,7 @@ std::vector<TextLayout::GlyphRun> TextLayout::glyphRuns(PointF origin) const {
   for (const Line& l : impl_->lines) {
     const float bottom = static_cast<float>(l.bottom) + static_cast<float>(lineIndex * impl_->padding);
     const int li = lineIndex++;
-    if (bottom > static_cast<float>(impl_->boxH)) break;
+    if (bottom > static_cast<float>(impl_->clipH)) break;
     if (bottom < 0) continue;
     const int baseY = static_cast<int>(std::floor(origin.y + l.top + l.baseline + static_cast<float>(li * impl_->padding) + 0.5f));
     for (const PlacedGlyph& g : l.g) {
@@ -670,7 +681,7 @@ void TextLayout::drawImpl(Renderer& r, GlyphAtlas& atlas, PointF origin, float a
     const float bottom = static_cast<float>(l.bottom) + static_cast<float>(lineIndex * impl_->padding) + dy;
     const int li = lineIndex++;
     if (li < firstLine) continue;
-    if (bottom > static_cast<float>(impl_->boxH)) break;
+    if (bottom > static_cast<float>(impl_->clipH)) break;
     if (bottom < 0) continue;
     const float baseY = origin.y + dy + l.top + l.baseline + static_cast<float>(li * impl_->padding);
     // Whole output pixels in absolute device coordinates, which include the letterbox offset.

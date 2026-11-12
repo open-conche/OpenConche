@@ -14,8 +14,9 @@ namespace choco::test {
 
 // A LuaState with the context natives need, rooted at a test asset directory.
 struct ScriptEnv {
-  explicit ScriptEnv(const std::string& assetDir)
-      : fs(assetDir, (std::filesystem::temp_directory_path() / "choco_test_user").string()),
+  explicit ScriptEnv(const std::string& assetDir,
+                     const std::string& userDir = (std::filesystem::temp_directory_path() / "choco_test_user").string())
+      : fs(assetDir, userDir),
         ctx(lua, fs, wm, clock, rng, config, stubs, log) {
     ctx.module = games::findModule("choc3");
     ctx.module->attach(ctx);

@@ -544,11 +544,12 @@ TEST_CASE("Rollover: hovering builds the popup from `contents`, fades it in over
   e.pump();
   CHECK(e.wm.findInTopModal("tip") == tip);
   CHECK(e.getNumber("gBuilt") == 1);
-  // Leaving removes it and its listener.
+  // Leaving removes it and its listener (and frees the popup, so its id is taken first).
+  const ui::WindowId popupId = popup->id();
   e.wm.handleInput(e.move(600, 100));
   e.pump();
   CHECK(e.wm.findInTopModal("tip") == nullptr);
-  CHECK_FALSE(e.wm.isMouseListener(popup->id()) );
+  CHECK_FALSE(e.wm.isMouseListener(popupId));
 }
 
 TEST_CASE("Rollover with the Chocolatier 2 popup fader: 50 ms steps 0.4, 0.8, 1; Rectangles end at 0.8, Text at 1") {

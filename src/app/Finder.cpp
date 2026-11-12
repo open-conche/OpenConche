@@ -32,8 +32,9 @@ const FinderVariant kFinderVariants[] = {
     {"choc2", "choc2", "Chocolatier 2", "Chocolatier 2", false},
     {"choc3", "choc3", "Chocolatier 3", "Chocolatier 3", false},
     {"choc3-reforged", "choc3", "Chocolatier 3 (Reforged)", "Chocolatier 3 - Reforged", true},
+    {"greatcc", "greatcc", "The Great Chocolate Chase", "The Great Chocolate Chase", false},
 };
-const int kFinderVariantCount = 4;
+const int kFinderVariantCount = 5;
 
 const FinderVariant* findFinderVariant(const std::string& id) {
   for (int i = 0; i < kFinderVariantCount; ++i)
@@ -154,6 +155,10 @@ bool loadGameLibrary(GameLibrary& out, std::string& error) {
       out.last = value;
       continue;
     }
+    if (key == "fixbugs") {
+      out.fixBugs = value != "0";
+      continue;
+    }
     // "<variant>.dir" / "<variant>.assets" for each FinderVariant id.
     for (int i = 0; i < kFinderVariantCount; ++i) {
       const std::string id = kFinderVariants[i].id;
@@ -188,6 +193,7 @@ bool saveGameLibrary(const GameLibrary& library, std::string& error) {
   }
   out << "# OpenConche game library, written by the game finder (docs/design/game-finder.md)\n";
   if (!library.last.empty()) out << "last = " << library.last << "\n";
+  if (!library.fixBugs) out << "fixbugs = 0\n";
   for (int i = 0; i < kFinderVariantCount; ++i) {
     const auto it = library.entries.find(kFinderVariants[i].id);
     if (it == library.entries.end()) continue;
@@ -371,7 +377,8 @@ FinderOutcome runGameFinder(Options& o, std::string& why, const FinderHost& host
     bool playable = false;
     gfx::text::TextLayout name, path, action, actionHover, crossDot;
   };
-  CardUi games[4];  // games[0..count-1] are the installed list, in kFinderVariants order
+  constexpr int kCardPitch = 72;  // 66 high, 6 apart: five cards and the ADD GAME button fit above the supported-games line
+  CardUi games[5];  // games[0..count-1] are the installed list, in kFinderVariants order
   int count = 0;
   constexpr gfx::RectI kExitRect{660, 30, 108, 28};  // tucked top right, out of the list's way
   gfx::RectI addRect{};  // below the installed list: the one way a game is added
@@ -428,8 +435,8 @@ FinderOutcome runGameFinder(Options& o, std::string& why, const FinderHost& host
       CardUi& g = games[count++];
       g.variant = v;
       g.dir = it->second.dir;
-      g.card = {60, 106 + (count - 1) * 86, 680, 80};
-      g.button = {600, g.card.y + 44, 128, 32};
+      g.card = {60, 106 + (count - 1) * kCardPitch, 680, 66};
+      g.button = {600, g.card.y + 28, 128, 32};
       g.cross = {706, g.card.y + 7, 22, 22};
       Options probe;
       std::string probeWhy;
@@ -442,7 +449,7 @@ FinderOutcome runGameFinder(Options& o, std::string& why, const FinderHost& host
     }
     // The primary action sits right under the list - or, with nothing installed yet, under the empty-state
     // message - prominent either way.
-    addRect = {60, count == 0 ? 150 : 106 + count * 86 + 2, 160, 36};
+    addRect = {60, count == 0 ? 150 : 106 + count * kCardPitch + 2, 160, 36};
   };
   refreshList();
   // The chrome texts. The footer is contextual (the redesign spec's two forms: nothing chosen yet, or a
@@ -454,8 +461,7 @@ FinderOutcome runGameFinder(Options& o, std::string& why, const FinderHost& host
   const gfx::text::TextLayout heading = makeText("SELECT A GAME", 12, kInk, 680, 14);
   const gfx::text::TextLayout emptyMessage = makeText("No games added yet.", 12, kDim, 680, 14, true);
   const gfx::text::TextLayout supported = makeText(
-      "SUPPORTED GAMES: Chocolatier / Chocolatier 2 / Chocolatier 3 / Chocolatier 3 - Reforged",
-      10, kDim, 680, 12, true);
+      kFinderSupportedLine, kFinderSupportedSize, kDim, kFinderSupportedWidth, 12, true);
   const char* const exitText = inGame ? "Back to game" : "Exit";
   const gfx::text::TextLayout exitLabel = makeText(exitText, 12, kInk, 108, 14, true);
   const gfx::text::TextLayout exitHover =
@@ -487,7 +493,7 @@ FinderOutcome runGameFinder(Options& o, std::string& why, const FinderHost& host
     platform::showWarning("OpenConche", msg);
   };
   gfx::text::TextLayout footer;
-  int footerFor = -2;  // -1: the contextual line; 0..3: that card's full directory (rebuilt on change)
+  int footerFor = -2;  // -1: the contextual line; 0..4: that card's full directory (rebuilt on change)
   int picked = -1;              // the variant whose Play clicked a stale card: its re-locate folder dialog
   bool dialogOpen = false;    // that re-locate folder dialog is up (not the ADD GAME one)
   bool dialogResolved = false;  // the re-locate dialog's callback fired
@@ -498,7 +504,8 @@ FinderOutcome runGameFinder(Options& o, std::string& why, const FinderHost& host
   bool cancelled = false;
   bool exitArmed = false;  // Exit/Back pressed; it fires on the release, so the game never sees a stray MouseUp
   int hoveredCard = -1;  // the card under the mouse (the footer shows its full directory, if it has one)
-  int hot = -1;          // the hovered control: i card i's Play, 4 Exit/Back, 100+i an X, 200 ADD GAME
+  constexpr int kHotExit = 300;
+  int hot = -1;          // the hovered control: i card i's Play, 100+i an X, 200 ADD GAME, kHotExit Exit/Back
   const auto inRect = [&](const gfx::RectI& r, double x, double y) {
     return x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h;
   };
@@ -536,7 +543,7 @@ FinderOutcome runGameFinder(Options& o, std::string& why, const FinderHost& host
             if (inRect(games[i].cross, e.x, e.y)) hot = 100 + i;
           }
           if (hot < 0 && inRect(addRect, e.x, e.y)) hot = 200;
-          if (hot < 0 && inRect(kExitRect, e.x, e.y)) hot = 4;
+          if (hot < 0 && inRect(kExitRect, e.x, e.y)) hot = kHotExit;
         }
       } else if (e.type == T::MouseDown && e.inArea && !dialogOpen && !addOpen && picked < 0) {
         if (inRect(kExitRect, e.x, e.y)) {  // "Exit" / "Back to game": fires on the MouseUp above
@@ -674,7 +681,7 @@ FinderOutcome runGameFinder(Options& o, std::string& why, const FinderHost& host
     renderer->fillRect({float(kExitRect.x + 1), float(kExitRect.y + 1), float(kExitRect.w - 2),
                         float(kExitRect.h - 2)},
                         kButtonBody, gfx::Blend::Opaque);
-    (hot == 4 ? exitHover : exitLabel).draw(*renderer, uiAtlas,
+    (hot == kHotExit ? exitHover : exitLabel).draw(*renderer, uiAtlas,
                                             {float(kExitRect.x), float(kExitRect.y + 7)});
     heading.draw(*renderer, uiAtlas, {60, 90});
     if (count == 0)
@@ -708,7 +715,7 @@ FinderOutcome runGameFinder(Options& o, std::string& why, const FinderHost& host
                         float(addRect.h - 2)},
                         kButtonBody, gfx::Blend::Opaque);
     (hot == 200 ? addHover : addLabel).draw(*renderer, uiAtlas, {float(addRect.x), float(addRect.y + 11)});
-    supported.draw(*renderer, uiAtlas, {60, 502});
+    supported.draw(*renderer, uiAtlas, {60, 512});
     // The footer: the contextual line, or the hovered card's full directory while one is hovered.
     const int footerWant = (hoveredCard >= 0 && !games[hoveredCard].dir.empty()) ? hoveredCard : -1;
     if (footerWant != footerFor) {

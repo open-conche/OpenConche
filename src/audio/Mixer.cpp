@@ -36,6 +36,7 @@ int Mixer::play(const Pcm* pcm, const VoiceParams& params) {
     v.cadi = params.cadi;
     v.tag = params.tag;
     v.active = true;
+    v.serial = nextSerial_++;
     const uint32_t fade = msToFrames(params.fadeInMs);
     if (fade > 0) v.ramp.set(0.0f, 1.0f, fade);
     return i;
@@ -72,6 +73,21 @@ bool Mixer::voiceActive(int slot, const Pcm* pcm) const {
 const Pcm* Mixer::voicePcm(int slot) const {
   Guard lk(*this);
   return slot >= 0 && slot < kMaxVoices ? voices_[static_cast<std::size_t>(slot)].pcm : nullptr;
+}
+
+uint32_t Mixer::voiceSerial(int slot) const {
+  Guard lk(*this);
+  return slot >= 0 && slot < kMaxVoices ? voices_[static_cast<std::size_t>(slot)].serial : 0;
+}
+
+void Mixer::setVoiceGain(int slot, float gain) {
+  Guard lk(*this);
+  if (slot >= 0 && slot < kMaxVoices) voices_[static_cast<std::size_t>(slot)].gain = gain;
+}
+
+void Mixer::setVoicePaused(int slot, bool paused) {
+  Guard lk(*this);
+  if (slot >= 0 && slot < kMaxVoices) voices_[static_cast<std::size_t>(slot)].paused = paused;
 }
 
 std::pair<std::size_t, std::size_t> Mixer::trackPhase(const MusicTrack* t) const {
@@ -261,7 +277,7 @@ void Mixer::render(float* out, std::size_t frames) {
   rendered_ += frames;
   if (!systemPaused_) {
     for (Voice& v : voices_) {
-      if (!v.active || (cadiPaused_ && v.cadi)) continue;
+      if (!v.active || v.paused || (cadiPaused_ && v.cadi)) continue;
       renderVoice(v, out, frames);
     }
     if (!cadiPaused_ && !musicPaused_) {

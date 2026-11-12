@@ -1,0 +1,32 @@
+<values>
+  <value name="current_level" min="0" max="61" saved="true" />
+  <value name="highest_level" min="0" max="60" saved="true" />
+  <value name="total_worth" value="0" saved="true" />
+  <value name="current_worth" value="0" />
+  <value name="num_bars" value="0" saved="true" />
+  <value name="completed_iquitos" value="0" saved="true" />
+  <value name="plain" value="10" />
+  <value name="speed" value="4.0">
+    <modify value="0.5" upgrade="kFast" category="gameplay" />
+    <modify value="0.25" upgrade="kFaster" category="gameplay" />
+  </value>
+  <value name="always" value="8">
+    <modify value="0.5" />
+  </value>
+  <value name="diff_modifier" value="0.5" />
+  <value name="scaled" value="10">
+    <modify value="1" byval="diff_modifier" />
+    <modify value="0.1" upgrade="kBig" category="station" />
+  </value>
+  <value name="clamped" value="10" min="5" max="12">
+    <modify value="1" />
+  </value>
+  <value name="floored" value="10" min="20" max="15" />
+  <value name="plotted" value="10">
+    <modify value="0.3" plot="kPlot" />
+  </value>
+  <value name="selfref" value="2">
+    <modify value="1" byval="selfref" />
+  </value>
+  <value name="" value="99" />
+</values>

@@ -56,11 +56,74 @@ void Audio::log(const std::string& line) {
 void Audio::applyGroupGains() {
   // AU s.10.6: a volume event writes the channel's Volume, so the group gain is the level itself, linear. (This replaces
   // the design's earlier "level x root gain x 0.985" guess.)
-  mixer_.setGroupGain(Group::Sfx, sfx_);
-  mixer_.setGroupGain(Group::Music, music_);
-  mixer_.setGroupGain(Group::Env, env_);
-  mixer_.setGroupGain(Group::Direct, std::min(1.0f, sfx_));  // TSound clamps to [0, 1]
+  const auto curve = [this](float v) { return squared_ ? v * v : v; };
+  mixer_.setGroupGain(Group::Sfx, curve(sfx_));
+  mixer_.setGroupGain(Group::Music, curve(music_));
+  mixer_.setGroupGain(Group::Env, curve(env_));
+  mixer_.setGroupGain(Group::Direct, curve(std::min(1.0f, sfx_)));  // TSound clamps to [0, 1]
   mixer_.setMaster(muted_ ? 0.0f : 1.0f);
+}
+
+void Audio::setSquaredGain(bool squared) {
+  squared_ = squared;
+  applyGroupGains();
+}
+
+Audio::VoiceHandle Audio::playVoice(const std::string& path, Group group, bool loop, float gain, bool cached) {
+  std::unique_ptr<Pcm> owned;
+  const Pcm* pcm = nullptr;
+  if (cached) {
+    pcm = cache_.pcm(path);
+  } else {
+    owned = cache_.decodeUncached(path);
+    pcm = owned.get();
+  }
+  if (!pcm) return 0;
+  VoiceParams p;
+  p.group = group;
+  p.loop = loop;
+  p.gain = gain;
+  const int slot = mixer_.play(pcm, p);
+  if (slot < 0) {
+    noteDrop();
+    return 0;
+  }
+  static constexpr const char* kGroupNames[] = {"sfx", "env", "music", "direct"};
+  log("[audio] voice " + path + " group=" + kGroupNames[static_cast<int>(group)] + " loop=" + (loop ? "1" : "0"));
+  bumpFired(path);
+  const VoiceHandle h = nextVoice_++;
+  VoiceRec& r = voices_[h];
+  r.slot = slot;
+  r.serial = mixer_.voiceSerial(slot);
+  r.pcm = pcm;
+  r.owned = std::move(owned);
+  return h;
+}
+
+bool Audio::voiceLive(const VoiceRec& r) const {
+  return mixer_.voiceActive(r.slot, r.pcm) && mixer_.voiceSerial(r.slot) == r.serial;
+}
+
+bool Audio::voiceDone(VoiceHandle h) const {
+  const auto it = voices_.find(h);
+  return it == voices_.end() || !voiceLive(it->second);
+}
+
+void Audio::setVoiceGain(VoiceHandle h, float gain) {
+  const auto it = voices_.find(h);
+  if (it != voices_.end() && voiceLive(it->second)) mixer_.setVoiceGain(it->second.slot, gain);
+}
+
+void Audio::pauseVoice(VoiceHandle h, bool paused) {
+  const auto it = voices_.find(h);
+  if (it != voices_.end() && voiceLive(it->second)) mixer_.setVoicePaused(it->second.slot, paused);
+}
+
+void Audio::stopVoice(VoiceHandle h) {
+  const auto it = voices_.find(h);
+  if (it == voices_.end()) return;
+  if (voiceLive(it->second)) mixer_.stop(it->second.slot);
+  voices_.erase(it);  // the voice is stopped, so an owned decode can go
 }
 
 void Audio::setLevels(float sfx, float music, float env, bool muted) {
@@ -565,6 +628,8 @@ void Audio::update(double nowMs) {
     }
   }
   reap();
+  // Voice records of voices that ended are dropped here (an uncached decode is freed once the audio thread is done with it).
+  for (auto it = voices_.begin(); it != voices_.end();) it = voiceLive(it->second) ? std::next(it) : voices_.erase(it);
 }
 
 std::string Audio::dump() const {

@@ -66,6 +66,8 @@ struct Voice {
   bool cadi = false;  // frozen by the CADI pause (factory PauseGame) as well as by the system pause
   int tag = -1;       // the event-table index of the event that started it, or -1
   bool active = false;
+  bool paused = false;    // frozen on its own (a voice handle's pause); the voice keeps its slot and position
+  uint32_t serial = 0;    // unique per play(), so a slot that was reused is told apart from the voice that left it
 };
 
 struct VoiceParams {
@@ -154,6 +156,11 @@ class Mixer {
   // Locked reads of state the audio thread writes.
   bool voiceActive(int slot, const Pcm* pcm) const;  // the slot still plays `pcm`
   const Pcm* voicePcm(int slot) const;
+  uint32_t voiceSerial(int slot) const;
+  // Per-voice controls for the voice-handle API in Audio (the slot must still be the caller's voice: check voiceActive and
+  // voiceSerial first).
+  void setVoiceGain(int slot, float gain);
+  void setVoicePaused(int slot, bool paused);
   std::pair<std::size_t, std::size_t> trackPhase(const MusicTrack* t) const;
   uint64_t framesRenderedLocked() const;
   const Voice& voice(int slot) const { return voices_[static_cast<std::size_t>(slot)]; }
@@ -214,6 +221,7 @@ class Mixer {
   bool cadiPaused_ = false;
   bool musicPaused_ = false;
   int dropped_ = 0;
+  uint32_t nextSerial_ = 1;
   uint64_t rendered_ = 0;
   MusicTrack* current_ = nullptr;
   MusicTrack* fading_ = nullptr;

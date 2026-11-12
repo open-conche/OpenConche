@@ -46,6 +46,26 @@ Window* Window::find(std::string_view name) {
 
 const Window* Window::find(std::string_view name) const { return const_cast<Window*>(this)->find(name); }
 
+void Window::sendToBack() {
+  if (!parent_) return;
+  auto& list = parent_->children_;
+  for (auto it = list.begin(); it != list.end(); ++it)
+    if (it->get() == this) {
+      std::rotate(it, it + 1, list.end());
+      return;
+    }
+}
+
+void Window::bringToFront() {
+  if (!parent_) return;
+  auto& list = parent_->children_;
+  for (auto it = list.begin(); it != list.end(); ++it)
+    if (it->get() == this) {
+      std::rotate(list.begin(), it, it + 1);
+      return;
+    }
+}
+
 void Window::init(const Style& style) {
   if (auto n = style.string("name")) name_ = *n;
   sizeAndPositionFromStyle(*this, style);

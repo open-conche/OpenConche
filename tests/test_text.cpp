@@ -297,6 +297,13 @@ TEST_CASE("FontCache falls back to default.mvec, then to the built-in font") {
   CHECK(cache.builtin()->ascent() > 0);
   CHECK(cache.builtin()->descent() > 0);
 
+  // a game's embedded font takes the built-in's place at the end of the chain (and is "__DEFAULT"); cached names keep theirs
+  FontCache withEmbedded(&afs);
+  withEmbedded.setEmbedded(real);
+  CHECK(withEmbedded.get("nope.mvec") == real);
+  CHECK(withEmbedded.get("__DEFAULT") == real);
+  CHECK(withEmbedded.get("fonts/real.mvec")->name() == "fonts/real.mvec");
+
   write("fonts/default.mvec", bytes);
   choco::assets::AssetFS afs2(dir.string(), "");
   FontCache cache2(&afs2);
@@ -945,4 +952,21 @@ TEST_CASE("layout: a leading newline is an empty counted line of normal height")
   CHECK(g.front().line == 1);                                        // line 0 has no glyphs
   CHECK(g.front().y == doctest::Approx(20 + 15.0f));                 // 'first' sits one line height (20) down
   CHECK(g.back().y == doctest::Approx(g.front().y + 20));
+}
+
+TEST_CASE("layout: a clip height taller than the window keeps the last line of centred overflowing text") {
+  TextStyle s = style();
+  s.flags = 5;  // vertically centred
+  const std::string text = "a b c d e f";
+  // narrow window and short height: many lines, centred, so the text runs past the window bottom
+  const auto dflt = TextLayout::build(text, s, 30, 60);
+  const int n = dflt.lineCount();
+  REQUIRE(n == 6);
+  CHECK(dflt.drawnLineCount() < n);  // default: the window height is the clip
+  const auto same = TextLayout::build(text, s, 30, 60, 60);
+  CHECK(same.drawnLineCount() == dflt.drawnLineCount());
+  const auto tall = TextLayout::build(text, s, 30, 60, 200);
+  CHECK(tall.lineCount() == n);
+  CHECK(tall.drawnLineCount() > dflt.drawnLineCount());
+  CHECK(tall.drawnLineCount() >= n - 2);  // only lines that end above the top are skipped
 }

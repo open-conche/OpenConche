@@ -13,7 +13,7 @@ class AssetFS;
 
 namespace choco::games {
 
-// Every module, in detection order: choc3, choc2, choc1.
+// Every module, in detection order: choc3, choc2, choc1, greatcc (the optional ones only when built).
 const std::vector<const script::GameModule*>& modules();
 
 // The module whose profile id is `id` ("choc3", "choc2", "choc1"), or null.

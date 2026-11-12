@@ -119,6 +119,16 @@ struct GameProfile {
   // (Main, 0x35648) runs scripts/mainloop.lua - so every other game is the
   // field's default.
   const char *mainloop = "ui/mainloop.lua";
+  // The SDK string table the host loads at boot (every game before Great Chocolate Chase has it at the root).
+  const char *stringsPath = "strings.xml";
+  // The string-table key of the window title; empty = `windowTitle` as is (`windowTitle` stays the fallback when the table
+  // or the key is missing).
+  const char *titleString = "";
+  // The hotspot of `bootCursor`.
+  int bootCursorHotX = 1, bootCursorHotY = 1;
+  // The gain a sound plays at is (master x level)^2 instead of the level itself (Great Chocolate Chase,
+  // docs/re/greatcc-audio.md section 4).
+  bool squaredGain = false;
 };
 
 // The per-context game state (design section 4): made by GameModule::attach,

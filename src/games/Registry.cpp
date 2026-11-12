@@ -9,6 +9,9 @@
 #ifdef CHOCO_GAME_CHOC1
 #include "games/choc1/Choc1Module.h"
 #endif
+#ifdef CHOCO_GAME_GREATCC
+#include "games/greatcc/GreatCCModule.h"
+#endif
 
 namespace choco::games {
 
@@ -20,6 +23,9 @@ const std::vector<const script::GameModule *> &modules() {
 #endif
 #ifdef CHOCO_GAME_CHOC1
       &choc1::module(),
+#endif
+#ifdef CHOCO_GAME_GREATCC
+      &greatcc::module(),
 #endif
   };
   return list;

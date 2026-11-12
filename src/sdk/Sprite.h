@@ -10,11 +10,10 @@
 #include "gfx/Texture.h"
 #include "gfx/TextureCache.h"
 #include "gfx/Types.h"
+#include "sdk/SpriteScript.h"
 
 namespace choco::sdk {
 
-class SpriteScript;
-struct SpriteContext;
 
 // The transform a parent hands its children: where its origin is on screen, and the scale, rotation (clockwise
 // degrees) and alpha accumulated down the tree.
@@ -28,10 +27,10 @@ struct SpriteSpec {
 // One node of a window's sprite tree (TSprite + TAnimatedSprite, docs/re/port-window.md 1.6). The window owns the root,
 // the root owns everything below. Sprites outside the tree (the lists a window keeps for hit tests and updates) are
 // non-owning and live in the same window, declared after the root.
-class Sprite {
+class Sprite : public ScriptTarget {
  public:
   explicit Sprite(int layer = 0, std::string debugName = {});
-  virtual ~Sprite();
+  ~Sprite() override;
   Sprite(const Sprite&) = delete;
   Sprite& operator=(const Sprite&) = delete;
 
@@ -95,6 +94,16 @@ class Sprite {
   void tickScripts(double now);
   // The sprite's script, or null if it never played.
   SpriteScript* scriptOf() const { return script.get(); }
+
+  // ScriptTarget: what the sprite's animation script drives.
+  const gfx::SpriteSheet* scriptSheet() const override { return sheet.get(); }
+  void scriptSetSheet(std::shared_ptr<const gfx::SpriteSheet> s) override { sheet = std::move(s); }
+  void scriptSetFrame(int i) override { frame = i; }
+  void scriptSetAlpha(float a) override { alpha = a; }
+  void scriptSetLayer(int l) override { setLayer(l); }
+  void scriptRemove() override { removed = true; }
+  void scriptPause(bool pause, int depth, double now) override;
+  bool scriptIsPlaying(int depth) const override;
 
   // The current image size and the anchor in image pixels; {0,0,0,0} size when the sprite has no image.
   gfx::RectF imageSize() const;

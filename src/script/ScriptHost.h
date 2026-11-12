@@ -14,7 +14,14 @@ namespace choco::script {
 // Owns the Main coroutine and everything that registers into the Lua state (script-host design sections 2 to 4).
 class ScriptHost : public ui::ScriptSink {
  public:
-  enum class CoState { NotStarted, Running, WaitingMessage, Yielded, Dead };
+  enum class CoState { NotStarted, Running, WaitingMessage, Yielded, Dead, Suspended };
+
+  // A handle on Main's coroutine while a native has suspended it (see suspend). Cheap to copy; goes stale when Main is
+  // resumed or dies, after which resume(handle, ...) does nothing.
+  struct Suspension {
+    std::uint64_t token = 0;
+    bool valid() const { return token != 0; }
+  };
 
   explicit ScriptHost(ScriptContext& ctx);  // sets ctx.host and installs itself as the window manager's sink
   ~ScriptHost() override;
@@ -27,6 +34,14 @@ class ScriptHost : public ui::ScriptSink {
 
   // Once per frame with the script clock in ms: advances the clock and resumes Main on timeout, poll or plain yield.
   void tick(double nowMs);
+
+  // Suspends Main from inside a native: call it from the native running on `L` and return `lua_yield(L, 0)` straight after.
+  // Main then stays asleep (no tick resumes it, messages queue) until resume(handle, value) wakes it, with `value` as the
+  // native's one return value. Returns an invalid handle when `L` is not Main's coroutine or a C call sits between it and
+  // the native (nothing can yield there); the native must then not yield.
+  Suspension suspend(lua_State* L);
+  // Wakes the suspended coroutine with the boolean. False when the handle is stale (Main was not suspended by it).
+  bool resume(const Suspension& s, bool value);
 
   // ui::ScriptSink
   void deliver(const ui::Message* message, const LuaRef* command) override;
@@ -78,6 +93,8 @@ class ScriptHost : public ui::ScriptSink {
   std::string deathTraceback_;  // Main's traceback at the error that killed it (empty while alive)
   std::string deathMessage_;
   std::uint64_t resumes_ = 0;
+  std::uint64_t suspendToken_ = 0;  // the live Suspension's token; 0 = none
+  std::uint64_t nextToken_ = 0;
 };
 
 // Registers GetTimer, CurrentTime and RandRange over the stubs.

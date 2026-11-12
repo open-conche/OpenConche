@@ -159,6 +159,7 @@ void WindowManager::postPressAnyKey(const std::string& name) {
 }
 
 void WindowManager::handleInput(const InputEvent& ev) {
+  if (inputFilter_ && inputFilter_(ev)) return;
   if (ev.type == InputEvent::Type::Key) routeKey(ev);
   else if (ev.type == InputEvent::Type::Text) routeText(ev);
   else routeMouse(ev);

@@ -94,17 +94,17 @@ void TextEditWindow::clearInitial() {
 // TCustomTextEdit::KeyHit and TTextEdit::KeyHit: whatever the key, a pending initial text is cleared first. Type 0 then
 // applies the width limit and, for a non-UTF-8 field, the length limit (length - 1 characters); type 5 is a rejection.
 bool TextEditWindow::keyHit(KeyHitType type, std::string_view ch) {
-  (void)ch;
   clearInitial();
+  bool accepted = false;
   switch (type) {
     case kInsert:
-      if (widthLimited_ && rect().w - layout().bounds().w < 20) return false;
-      if (!utf8_ && maxLen_ <= static_cast<int>(text_.size()) + 1) return false;
-      return true;
-    case kEdit: return true;
-    case kReject: return false;
+      accepted = !(widthLimited_ && rect().w - layout().bounds().w < 20) && (utf8_ || maxLen_ > static_cast<int>(text_.size()) + 1);
+      break;
+    case kEdit: accepted = true; break;
+    case kReject: accepted = false; break;
   }
-  return false;
+  if (preEdit_) preEdit_(static_cast<int>(type), ch.empty() ? 0 : static_cast<unsigned char>(ch[0]), accepted);
+  return accepted;
 }
 
 void TextEditWindow::testEnable(int delta) {

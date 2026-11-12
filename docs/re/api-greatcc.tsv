@@ -1,0 +1,195 @@
+name	kind	args	returns	alias	evidence	note
+# Great Chocolate Chase (internal name chocolateshop). Classes in the note: (a) already in our engine, (b) SDK-shared but missing/different in ours, (c) game-specific native, (d) game-specific window type, (e) Lua-side or stray. alias: '=' same name exists in the engine, '@native' a native to implement, '@window' a window type to register, '-' nothing to bind.
+# Rows 1-158 are the globals shipped Lua reads but never sets (re/greatcc/lua-undefined-globals.tsv), in that file's order. Rows after the marker '# extras' are natives the binary registers that the 158 do not name (anim-script globals, window natives unused by Lua).
+AppendStyle	function			=	ScreenInit.lua (identical chunk to Chocolatier 3)	(a) defined by the embedded ScreenInit.lua chunk (identical bytecode apart from line numbers); lua/prelude.lua reproduces it.
+AreInsideGame	function		bool	@native	TSettings::AreInsideGame@0x0017add4	(c) returns the flag set by InsideGame. options.lua / yesno.lua read it.
+BLayeredWindow	constructor	table		@window	Main: AddWindowType("BLayeredWindow", BLayeredWindow::ClassId)	(d) game window type; class BLayeredWindow. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+BeginGroup	function			=	ScreenInit.lua (identical chunk to Chocolatier 3)	(a) defined by the embedded ScreenInit.lua chunk (identical bytecode apart from line numbers); lua/prelude.lua reproduces it.
+Bitmap	constructor	table		=	TImage::ClassId via TWindowScript ctor AddWindowType	(a) built-in DSL window type (TWindowScript ctor registers Slider, Bitmap, Button, Text, TextEdit, Window); our engine has it.
+ChangeCurrentUserName	function	string name	nothing	=	TSettings::ChangeCurrentUserName@0x0003ce90	(a) engine has it. GREATCC also re-logs the user's best hiscore row of each of the 4 modes under the new name (TPfHiscores) then writes pref 'name'. chooseplayer.lua:230 calls SetCurrentUser(GetSelectedUserIndex()) first.
+Close	function		nothing	@native	VPrelevelWindow::Close@0x0003294e	(c) VPrelevelWindow native; prelevel.lua:229,263 call Close().
+CloseWindow	function			=	ScreenInit.lua (identical chunk to Chocolatier 3)	(a) defined by the embedded ScreenInit.lua chunk (identical bytecode apart from line numbers); lua/prelude.lua reproduces it.
+Color	function			=	ScreenInit.lua (identical chunk to Chocolatier 3)	(a) defined by the embedded ScreenInit.lua chunk (identical bytecode apart from line numbers); lua/prelude.lua reproduces it.
+CreateNamedMessage	function	number type, string name	message	=	TWindowScript::TWindowScript@0xdc4a0 (native registered by the TWindowScript ctor)	(a) engine has it (WindowNatives.cpp). 37 uses: PostMessage(CreateNamedMessage(kFadeToBlack, "SwapToModal(...)")).
+CreateNewUser	function	string name	nothing	=	TSettings::CreateNewUser@0x0003e83e	(a) engine has it; GREATCC detail: copies soundlevel/musiclevel (default 750 both) and soundoff from the current user, stores userversionnumber='1.0', then SetCurrentUser(new). No ambientlevel (C3 copies one). Called after DoModal(entername.lua) returns a name.
+DebugOut	function	string	nothing	=	TScript::LuaInit (LuaDebugOut@0xabafc)	(a) engine has it. hiscoresubmit.lua:71.
+DeleteUser	function	number index	nothing	=	TSettings::DeleteUser@0x0003e7fa	(a) engine has it. TPrefs::DeleteUser then SetCurrentUser(index-1, or numUsers-1 if that is <0). Deleting the last user -> SetCurrentUser(-1): curuser written, per-user state NOT reloaded.
+DisplayDialog	function			=	ScreenInit.lua (identical chunk to Chocolatier 3)	(a) defined by the embedded ScreenInit.lua chunk (identical bytecode apart from line numbers); lua/prelude.lua reproduces it.
+DisplaySplash	function			=	ScreenInit.lua (identical chunk to Chocolatier 3)	(a) defined by the embedded ScreenInit.lua chunk (identical bytecode apart from line numbers); lua/prelude.lua reproduces it.
+DoCheatGame	function	number type, string param	string	@native	ShopWindow::DoCheat@0x000453ec	(c) ShopWindow::DoCheat; cheats.lua:13 returns it.
+DoCheatMap	function	number type, string param	string	@native	VWorldMap::DoCheat@0x0006163a	(c) VWorldMap::DoCheat; cheats.lua:15 returns it.
+DoCommand	function	string	nothing	@native	ShopWindow::DoCommand@0x00043280	(c) ShopWindow native (debug console); console.lua:79,91.
+DoDebug	function		nothing	@native	ShopWindow::Debug@0x0003f8ee	(c) ShopWindow::Debug. game.lua:218 button game_debug (enabled only when settings game_debug == 1).
+DoMainWindow	function			=	ScreenInit.lua (identical chunk to Chocolatier 3)	(a) defined by the embedded ScreenInit.lua chunk (identical bytecode apart from line numbers); lua/prelude.lua reproduces it.
+DoMetrics	function	number, bool	nothing	@native	ShopWindow::DoMetrics@0x00043f8a	(c) ShopWindow native; pause.lua calls DoMetrics(2,false).
+DoModal	function			=	ScreenInit.lua (identical chunk to Chocolatier 3)	(a) defined by the embedded ScreenInit.lua chunk (identical bytecode apart from line numbers); lua/prelude.lua reproduces it.
+DoTransition	function	number type	bool	@native	RTransitionManager::RTransitionManager@0x00073edc	(c) NOT a native: RTransitionManager's ctor registers native Lua_DoTransition(type) (yields the coroutine, returns false for an unknown type) and runs a Lua definition: function DoTransition( type ) local ret = Lua_DoTransition( type ); while( ret ~= true and ret ~= false )do ret = Yield(); end return ret; end. kFade*/kBounce* ids are 1001..1011 (scripts/transitions.lua). Owner of the behaviour: the RTransitionManager analyst.
+DoWindow	function			=	ScreenInit.lua (identical chunk to Chocolatier 3)	(a) defined by the embedded ScreenInit.lua chunk (identical bytecode apart from line numbers); lua/prelude.lua reproduces it.
+EnableWindow	function	string name, bool enable	nothing	=	TWindowScript::TWindowScript@0xdc4a0 (native registered by the TWindowScript ctor)	(a) engine has it. 58 uses.
+FColor	function			=	ScreenInit.lua (identical chunk to Chocolatier 3)	(a) defined by the embedded ScreenInit.lua chunk (identical bytecode apart from line numbers); lua/prelude.lua reproduces it.
+FitToChildren	function			=	ScreenInit.lua (identical chunk to Chocolatier 3)	(a) defined by the embedded ScreenInit.lua chunk (identical bytecode apart from line numbers); lua/prelude.lua reproduces it.
+GetButtonToggleState	function	string name	bool	=	TWindowScript::TWindowScript@0xdc4a0 (native registered by the TWindowScript ctor)	(a) engine has it. hiscoresubmit.lua.
+GetConfig	function	string key	string	=	TWindowScript::TWindowScript@0xdc4a0 (native registered by the TWindowScript ctor)	(a) engine has it (ContentNatives.cpp): TPlatform config value from settings.xml. Keys read by GREATCC Lua: firstpeek, game_debug.
+GetCurrentGameMode	function		number	=	TSettings::GetCurrentGameMode@0x0017ade0	(a) engine has it for choc2; GREATCC returns the stored mode 0..3. Lua only compares with 0 (story) - 14 reads.
+GetCurrentLevel	function		number	@native	VLevelManager::GetCurrentLevel@0x0002182a	(c) VValue 'current_level' (0..61). Differs from TSettings::GetCurrentLevel in the other SDK games.
+GetCurrentUserName	function		string	=	TSettings::GetCurrentUserName@0x0003c438	(a) engine has it. pref 'name' of the current user, default ''. mainmenu.lua builds labels '#'..GetCurrentUserName().
+GetEndlevelText	function	number status	string	@native	ShopWindow::GetEndlevelText@0x00041a64	(c) ShopWindow native; endlevel.lua:246 with gDialogTable.level_status.
+GetGoalScore	function	number level	number	@native	VLevelManager::GetGoalScore@0x00020b54	(c) goal score from levels/goals.xml. endlevel.lua:122.
+GetHighestComplete	function		number	@native	VLevelManager::GetHighestComplete@0x00021562	(c) VValue 'highest_level' via GetManagedInt(...,0) (0..60). 5 uses.
+GetLabel	function	string name	string	=	TWindowScript::TWindowScript@0xdc4a0 (native registered by the TWindowScript ctor)	(a) engine has it. 9 uses.
+GetManagedInt	function	string name, number default	number	@native	VValueManager::GetInt@0x0005f7fe	(c) floor(VValue::GetValue) as int; a missing name is created on the fly (unsaved, base = default). 7 uses: do_map_transition, game_intro, current_level_total, served_this_level, angry_this_level, current_worth.
+GetMasteryScore	function	number level	number	@native	VLevelManager::GetMasteryScore@0x00020b2e	(c) mastery goal from levels/goals.xml (levelgoal attr), 0 for unknown level. endlevel.lua:129.
+GetNumUsers	function		number	=	TSettings::GetNumUsers@0x0003c568	(a) engine has it. TPrefs::GetNumUsers = prefs sections - 1.
+GetSelectedUserIndex	function		number	@native	TChoosePlayer::GetSelectedUserIndex@0x0000d818	(c) first child chooseplayer_button_0..9 whose toggle bit (button+0x3d bit0) is set; 0 when none. Other SDK games call this GetCurrentSelectedUser.
+GetSelectedUserName	function		string	@native	TChoosePlayer::GetSelectedUserName@0x0000d89e	(c) TSettings::GetUserName(GetSelectedUserIndex()).
+GetState	function		number	=	THiscore::GetState@0x0016beb4	(a) THiscore::GetState (hiscore tab state). Name collision with TGameState::GetState(str): the later-constructed owner wins (docs/re/api-globals.tsv).
+GetString	function			=	ScreenInit.lua (identical chunk to Chocolatier 3)	(a) defined by the embedded ScreenInit.lua chunk (identical bytecode apart from line numbers); lua/prelude.lua reproduces it.
+GetTag	function			=	ScreenInit.lua (identical chunk to Chocolatier 3)	(a) defined by the embedded ScreenInit.lua chunk (identical bytecode apart from line numbers); lua/prelude.lua reproduces it.
+Group	function			=	ScreenInit.lua (identical chunk to Chocolatier 3)	(a) defined by the embedded ScreenInit.lua chunk (identical bytecode apart from line numbers); lua/prelude.lua reproduces it.
+HideNotification	function		nothing	@native	VAchievementManager::HideNotification@0x000048f8	(c) sets every pending notification's close flag and forgets them. endlevel.lua:179,218.
+HiscoreWindow	constructor	table		=	Main: AddWindowType("HiscoreWindow", THiscore::ClassId)	(a) choc3 has a HiscoreWindow; class THiscore (registers GetState/ScoreAvailable/UpdateText/LaunchPrivacyPolicy while alive).
+InitUserScore	function		nothing	@native	THiscoreSubmit::InitUserScore@0x000199ae	(b) builds and runs a Lua line setting gNameEdit, gAccountEdit, gPassEdit, gRemember (format strings at 0x14dd88..0x14ddd8); choc3's GameNatives.cpp:85 builds the same string elsewhere.
+InsideGame	function	bool inside	nothing	@native	TSettings::InsideGame@0x0003c726	(c) sets the 'inside a level' flag (this+0x14). In story mode toggles the telemetry timer StoryModePlayTime. If inside==true and the app is not foreground, queues DoModal('scripts/pause.lua'). game.lua end of file calls InsideGame(true); the main loop clears it before opening pause.
+IsEnabled	function	string key	bool	=	TWindowScript::TWindowScript@0xdc4a0 (native registered by the TWindowScript ctor)	(a) engine has it. game.lua/worldmap.lua IsEnabled(kCheatMode) = settings cheatmode.
+IsGameLoaded	function		bool	@native	TSettings::IsGameLoaded@0x0017adc8	(c) flag this+0x15: set true in ShopWindow::PostChildrenInit, cleared in ~ShopWindow (a ShopWindow level exists). cheats/loading/quitverify/worldmap use it.
+IsNameInUse	function	string name	bool	=	TSettings::IsNameInUse@0x0003cc4a	(a) engine has it. Exact str== scan of all user names. entername.lua:140.
+KDial	constructor	table		@window	Main: AddWindowType("KDial", KDial::ClassId)	(d) game window type; class KDial. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+KSplit9Image	constructor	table		@window	Main: AddWindowType("KSplit9Image", KSplit9Image::ClassId)	(d) game window type; class KSplit9Image. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+KSweepDial	constructor	table		@window	Main: AddWindowType("KSweepDial", KSweepDial::ClassId)	(d) game window type; class KSweepDial. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+LaunchGameLink	function	number which	nothing	@native	VUpsellWindow::LaunchGameLink@0x00089fdc	(b) GREATCC registers it on VUpsellWindow (choc1 on TXSellWindow); upsell.lua LaunchGameLink(0|1|2).
+LaunchPrivacyPolicy	function		nothing	=	THiscore::LaunchPrivacyPolicy@0x00019dee	(a) choc3 HiscoreWindow has it.
+LevelSetup	function		nothing	@native	ShopWindow::LevelSetup@0x00048508	(c) ShopWindow native; loading.lua:14 when IsGameLoaded().
+MakeDialog	function			=	ScreenInit.lua (identical chunk to Chocolatier 3)	(a) defined by the embedded ScreenInit.lua chunk (identical bytecode apart from line numbers); lua/prelude.lua reproduces it.
+ModalReturn	function			=	ScreenInit.lua (identical chunk to Chocolatier 3)	(a) defined by the embedded ScreenInit.lua chunk (identical bytecode apart from line numbers); lua/prelude.lua reproduces it.
+PauseSounds	function	bool pause, number soundGroup	nothing	@native	VSoundManager::PauseSounds@0x0007e742	(c) pause.lua:40,146 and prelevel.lua:267,329: PauseSounds(true/false, kSFXSoundGroup). kSFXSoundGroup is defined outside the 158-name list (locations/defines.lua, I).
+PlayTransition	function	string location	nothing	@native	VWorldMap::PlayTransition@0x0006141c	(c) VWorldMap native: worldmap.lua:17-25 with grytviken|namche|krakatoa|kamchatka|gaberoun.
+PopModal	function			=	ScreenInit.lua (identical chunk to Chocolatier 3)	(a) defined by the embedded ScreenInit.lua chunk (identical bytecode apart from line numbers); lua/prelude.lua reproduces it.
+PostMessage	function	message	nothing	=	TWindowScript::TWindowScript@0xdc4a0 (native registered by the TWindowScript ctor)	(a) engine has it. 37 uses.
+QuitToMainMenu	function		nothing	@native	TSettings::QuitToMainMenu@0x0003c57a	(b) shared TSettings native, only a stub in our choc1/choc3 .inc. Pops modal windows while the top modal has a parent (loop: TWindowManager::PopModal with the top modal's id formatted '%8x'), then VSoundManager::PurgeSounds. 5 uses (endlevel, loading, prelevel, pause...).
+RActiveTextLayer	constructor	table		@window	Main: AddWindowType("RActiveTextLayer", RActiveTextLayer::ClassId)	(d) game window type; class RActiveTextLayer. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+RAdapt	constructor	table		@window	Main: AddWindowType("RAdapt", RAdapt::ClassId)	(d) game window type; class RAdapt. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+RBounceWindow	constructor	table		@window	Main: AddWindowType("RBounceWindow", RBounceWindow::ClassId)	(d) game window type; class RBounceWindow. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+RDisableButton	constructor	table		@window	Main: AddWindowType("RDisableButton", RDisableButton::ClassId)	(d) game window type; class RDisableButton. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+RScrollable	constructor	table		@window	Main: AddWindowType("RScrollable", RScrollable::ClassId)	(d) game window type; class RScrollable. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+RShrinkText	constructor	table		@window	Main: AddWindowType("RShrinkText", RShrinkText::ClassId)	(d) game window type; class RShrinkText. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+RSpriteLayer	constructor	table		@window	Main: AddWindowType("RSpriteLayer", RSpriteLayer::ClassId)	(d) game window type; class RSpriteLayer. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+RTextEditDisable	constructor	table		@window	Main: AddWindowType("RTextEditDisable", RTextEditDisable::ClassId)	(d) game window type; class RTextEditDisable. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+RTimer	constructor	table		@window	Main: AddWindowType("RTimer", RTimer::ClassId)	(d) game window type; class RTimer. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+RWindow	constructor	table		@window	Main: AddWindowType("RWindow", RWindow::ClassId)	(d) game window type; class RWindow. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+SaveVolumes	function		nothing	=	TOptions::SaveVolumes@0x0002b8e6	(a) engine has it for choc3; GREATCC reads sliders options_sfxlevel_slider / options_musiclevel_slider and stores int(value*1000) into per-user prefs soundlevel / musiclevel.
+ScoreAvailable	function		bool	=	THiscore::ScoreAvailable@0x00019dae	(a) choc3 HiscoreWindow has it.
+SelectLayer	function			=	ScreenInit.lua (identical chunk to Chocolatier 3)	(a) defined by the embedded ScreenInit.lua chunk (identical bytecode apart from line numbers); lua/prelude.lua reproduces it.
+SetBitmap	function			=	ScreenInit.lua (identical chunk to Chocolatier 3)	(a) defined by the embedded ScreenInit.lua chunk (identical bytecode apart from line numbers); lua/prelude.lua reproduces it.
+SetButtonToggleState	function	string name, bool on	nothing	=	TWindowScript::TWindowScript@0xdc4a0 (native registered by the TWindowScript ctor)	(a) engine has it. chooseplayer.lua, hiscoresubmit.lua.
+SetCurrentDifficulty	function	number diff	nothing	@native	TSettings::SetCurrentDifficulty@0x0003c406	(c) diff 0..2 (unsigned compare, else ignored). If mode>0 first calls SetCurrentGameMode(diff+1) (which zeroes the stored difficulty), then stores diff. worldmap.lua:52 (endless only). Not persisted.
+SetCurrentGameMode	function	number mode	nothing	=	TSettings::SetCurrentGameMode@0x0003c2d4	(a) engine has it for choc1/2, but GREATCC semantics differ (see docs/re/greatcc-boot-and-natives.md 2.2): valid 0..3 only (unsigned compare, others ignored); resets difficulty to 0; writes GLOBAL pref gamemode (flush); sets hiscore table name _PFGAMEMODENAMES[mode]; telemetry state StoryModeSessionTime = (mode==0). mainmenu.lua passes 0 (adventure) and 1 (endless).
+SetCurrentLevel	function	number level	nothing	@native	VLevelManager::SetCurrentLevel@0x000218b6	(c) stores this+0x20 AND VValue current_level (saved). worldmap.lua:179-183 SetCurrentLevel(GetHighestComplete()+1) etc.
+SetCurrentUser	function	number index	nothing	=	TSettings::SetCurrentUser@0x0003e700	(a) engine has it; GREATCC: ignored when index >= numUsers (signed, -1 allowed); writes global curuser; if index>=0 also sets the hiscore user name, applies the user's sound prefs and reloads the whole per-user state (RState blocks, values.xml, level/achievement/tutorial/quest managers).
+SetDefaultStyle	function			=	ScreenInit.lua (identical chunk to Chocolatier 3)	(a) defined by the embedded ScreenInit.lua chunk (identical bytecode apart from line numbers); lua/prelude.lua reproduces it.
+SetFocus	function			=	ScreenInit.lua (identical chunk to Chocolatier 3)	(a) defined by the embedded ScreenInit.lua chunk (identical bytecode apart from line numbers); lua/prelude.lua reproduces it.
+SetLabel	function	string name, string text	nothing	=	TWindowScript::TWindowScript@0xdc4a0 (native registered by the TWindowScript ctor)	(a) engine has it. 14 uses.
+SetManagedValue	function	string name, number value, bool save	nothing	@native	VValueManager::SetValue@0x0005f3be	(c) VValue::SetValue clamps to [min,max] then optionally saves; creates the value if missing (unclamped) and saves if save==true. worldmap.lua: SetManagedValue('do_map_transition',0,false), ('game_intro',1,true).
+SetNameField	function	string buttonName, string text	nothing	@native	TChoosePlayer::SetNameField@0x0000d8da	(c) sets the label of child 'namefield' inside the named button (TText). chooseplayer.lua:125.
+SetPage	function	number page	nothing	@native	VHelpWindow::SetPage@0x0008345e	(c) VHelpWindow native. help.lua:430 SetPage(0).
+SetPlayerChoices	function		nothing	@native	TChoosePlayer::SetPlayerChoices@0x0000d5c0	(b) TChoosePlayer native, but GREATCC's body only builds the Lua line UpdatePlayerChoices(curuser, n, {'name',...}) (n capped at 10, names not escaped) and runs it through DoLuaString. Other SDK games have a different SetPlayerChoices.
+SetQuitting	function	bool	nothing	@native	TSettings::SetQuitting@0x0017adf8	(c) sets this+0x16; the main loop only opens quitverify.lua on a window-close event while it is false. 12 uses.
+SetState	function			=	ScreenInit.lua (identical chunk to Chocolatier 3)	(a) defined by the embedded ScreenInit.lua chunk (identical bytecode apart from line numbers); lua/prelude.lua reproduces it.
+SetStyle	function			=	ScreenInit.lua (identical chunk to Chocolatier 3)	(a) defined by the embedded ScreenInit.lua chunk (identical bytecode apart from line numbers); lua/prelude.lua reproduces it.
+SetWelcomeText	function		nothing	@native	TMainMenu::SetWelcomeText@0x000266c2	(c) fills txt_welcome(_shadow) with GetString('mainmenu_welcome', ','|'!') and txt_user(_shadow) with '<name>!' (when users exist). Lua has the old Lua version commented out.
+SetupUpsell	function		nothing	@native	VUpsellWindow::SetupUpsell@0x0008a328	(c) VUpsellWindow native; upsell.lua:233.
+ShopWindow	constructor	table		@window	Main: AddWindowType("ShopWindow", ShopWindow::ClassId)	(d) game window type; class ShopWindow. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+ShowCurrentLocation	function		nothing	@native	VWorldMap::ShowCurrentLocation@0x00061590	(c) VWorldMap native.
+ShowNewAchievements	function	number closeCondition	nothing	@native	VAchievementManager::ShowNewAchievements@0x0000452e	(c) shows the queued new achievements (scripts/rewardnotify.lua) and clears the queue. endlevel.lua:282 ShowNewAchievements(0).
+SubmitToServer	function	string account, string pass, string name, bool remember	nothing	=	THiscoreSubmit::SubmitToServer@0x0016bf40	(a) exists in choc3 GameNatives.cpp only. Online; offline build can no-op. THiscoreSubmit also nils it in its dtor.
+SwapToModal	function			=	ScreenInit.lua (identical chunk to Chocolatier 3)	(a) defined by the embedded ScreenInit.lua chunk (identical bytecode apart from line numbers); lua/prelude.lua reproduces it.
+TChoosePlayer	constructor	table		@window	Main: AddWindowType("TChoosePlayer", TChoosePlayer::ClassId)	(d) game window type; class TChoosePlayer. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+TCredits	constructor	table		@window	Main: AddWindowType("TCredits", TCredits::ClassId)	(d) game window type; class TCredits. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+TMainMenu	constructor	table		@window	Main: AddWindowType("TMainMenu", TMainMenu::ClassId)	(d) game window type; class TMainMenu. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+TOptions	constructor	table		@window	Main: AddWindowType("TOptions", TOptions::ClassId)	(d) game window type; class TOptions. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+TSlider	constructor	table		@window	Main: AddWindowType("TSlider", TSlider::ClassId)	(b) the SAME class as the built-in 'Slider' registered a second time under the name TSlider. Our engine only registers 'Slider' (src/ui/widgets/InputWidgets.cpp:692): add the alias. options.lua / prelevel.lua / cheats_achievements.lua use TSlider{...}.
+Text	constructor	table		=	TText::ClassId via TWindowScript ctor AddWindowType	(a) built-in DSL window type (TWindowScript ctor registers Slider, Bitmap, Button, Text, TextEdit, Window); our engine has it.
+TextEdit	constructor	table		=	TTextEdit::ClassId via TWindowScript ctor AddWindowType	(a) built-in DSL window type (TWindowScript ctor registers Slider, Bitmap, Button, Text, TextEdit, Window); our engine has it.
+ToggleFullScreen	function		bool	=	TSettings::ToggleFullScreen@0x0003c1ae	(a) engine has it (UserNatives.cpp). Flips fullscreen via TPlatform::SetFullscreen; on success writes global pref fullscreen (1/0). Returns true on success. options.lua calls it from the fullscreen checkbox.
+ToggleSoundMute	function		nothing	=	TSettings::ToggleSoundMute@0x0003c1f6	(a) engine has it. Reads per-user pref soundoff (default 0), writes soundoff = (old != 1), master volume 0.0 when now muted else 1.0.
+VChooseAchievements	constructor	table		@window	Main: AddWindowType("VChooseAchievements", VChooseAchievements::ClassId)	(d) game window type; class VChooseAchievements. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+VHelpWindow	constructor	table		@window	Main: AddWindowType("VHelpWindow", VHelpWindow::ClassId)	(d) game window type; class VHelpWindow. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+VObjectWindow	constructor	table		@window	Main: AddWindowType("VObjectWindow", VObjectWindow::ClassId)	(d) game window type; class VObjectWindow. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+VPlotWindow	constructor	table		@window	Main: AddWindowType("VPlotWindow", VPlotWindow::ClassId)	(d) game window type; class VPlotWindow. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+VPrelevelWindow	constructor	table		@window	Main: AddWindowType("VPrelevelWindow", VPrelevelWindow::ClassId)	(d) game window type; class VPrelevelWindow. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+VQuestWindow	constructor	table		@window	Main: AddWindowType("VQuestWindow", VQuestWindow::ClassId)	(d) game window type; class VQuestWindow. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+VRegister	constructor	table		@window	Main: AddWindowType("VRegister", VRegister::ClassId)	(d) game window type; class VRegister. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+VRewardNotify	constructor	table		@window	Main: AddWindowType("VRewardNotify", VRewardNotify::ClassId)	(d) game window type; class VRewardNotify. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+VRewardsWindow	constructor	table		@window	Main: AddWindowType("VRewardsWindow", VRewardsWindow::ClassId)	(d) game window type; class VRewardsWindow. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+VShopHud	constructor	table		@window	Main: AddWindowType("VShopHud", VShopHud::ClassId)	(d) game window type; class VShopHud. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+VSpriteWindow	constructor	table		@window	Main: AddWindowType("VSpriteWindow", VSpriteWindow::ClassId)	(d) game window type; class VSpriteWindow. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+VTintWindow	constructor	table		@window	Main: AddWindowType("VTintWindow", VTintWindow::ClassId)	(d) game window type; class VTintWindow. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+VUpgradeList	constructor	table		@window	Main: AddWindowType("VUpgradeList", VUpgradeList::ClassId)	(d) game window type; class VUpgradeList. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+VUpgradeTab	constructor	table		@window	Main: AddWindowType("VUpgradeTab", VUpgradeTab::ClassId)	(d) game window type; class VUpgradeTab. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+VUpsellWindow	constructor	table		@window	Main: AddWindowType("VUpsellWindow", VUpsellWindow::ClassId)	(d) game window type; class VUpsellWindow. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+VWorldMap	constructor	table		@window	Main: AddWindowType("VWorldMap", VWorldMap::ClassId)	(d) game window type; class VWorldMap. Behaviour belongs to the window analysts (see docs/re/greatcc-*.md for the class).
+Window	constructor	table		=	TWindow::ClassId via TWindowScript ctor AddWindowType	(a) built-in DSL window type (TWindowScript ctor registers Slider, Bitmap, Button, Text, TextEdit, Window); our engine has it.
+gAccountEdit	global			@native	THiscoreSubmit::InitUserScore@0x199ae	(b) set by InitUserScore via DoLuaString before hiscoresubmit.lua reads them; see InitUserScore.
+gDialogTable	global			=	ScreenInit.lua	(a) global constant/table from the embedded ScreenInit.lua; present in lua/prelude.lua.
+gNameEdit	global			@native	THiscoreSubmit::InitUserScore@0x199ae	(b) set by InitUserScore via DoLuaString before hiscoresubmit.lua reads them; see InitUserScore.
+gPassEdit	global			@native	THiscoreSubmit::InitUserScore@0x199ae	(b) set by InitUserScore via DoLuaString before hiscoresubmit.lua reads them; see InitUserScore.
+gRemember	global			@native	THiscoreSubmit::InitUserScore@0x199ae	(b) set by InitUserScore via DoLuaString before hiscoresubmit.lua reads them; see InitUserScore.
+kAllLayers	global			=	ScreenInit.lua	(a) global constant/table from the embedded ScreenInit.lua; present in lua/prelude.lua.
+kButtonPress	global			=	ScreenInit.lua	(a) global constant/table from the embedded ScreenInit.lua; present in lua/prelude.lua.
+kCenter	global			=	ScreenInit.lua	(a) global constant/table from the embedded ScreenInit.lua; present in lua/prelude.lua.
+kCheatMode	global			=	ScreenInit.lua	(a) global constant/table from the embedded ScreenInit.lua; present in lua/prelude.lua.
+kDefaultButtonSoundOut	global			-	scripts/pause.lua:111,135	(e) stray: never defined anywhere (nil) so styles get sound = nil. Same as the kDefaultButtonSound situation in docs/re/audio.md.
+kHAlignCenter	global			=	ScreenInit.lua	(a) global constant/table from the embedded ScreenInit.lua; present in lua/prelude.lua.
+kHAlignLeft	global			=	ScreenInit.lua	(a) global constant/table from the embedded ScreenInit.lua; present in lua/prelude.lua.
+kHAlignRight	global			=	ScreenInit.lua	(a) global constant/table from the embedded ScreenInit.lua; present in lua/prelude.lua.
+kHiscoreAnonymous	global			=	ScreenInit.lua	(a) global constant/table from the embedded ScreenInit.lua; present in lua/prelude.lua.
+kHiscoreLocalOnly	global			=	ScreenInit.lua	(a) global constant/table from the embedded ScreenInit.lua; present in lua/prelude.lua.
+kMax	global			=	ScreenInit.lua	(a) global constant/table from the embedded ScreenInit.lua; present in lua/prelude.lua.
+kPush	global			=	ScreenInit.lua	(a) global constant/table from the embedded ScreenInit.lua; present in lua/prelude.lua.
+kPushButtonAlignment	global			=	ScreenInit.lua	(a) global constant/table from the embedded ScreenInit.lua; present in lua/prelude.lua.
+kQuitNow	global			=	ScreenInit.lua	(a) global constant/table from the embedded ScreenInit.lua; present in lua/prelude.lua.
+kRadio	global			=	ScreenInit.lua	(a) global constant/table from the embedded ScreenInit.lua; present in lua/prelude.lua.
+kRadioButtonAlignment	global			=	ScreenInit.lua	(a) global constant/table from the embedded ScreenInit.lua; present in lua/prelude.lua.
+kToggle	global			=	ScreenInit.lua	(a) global constant/table from the embedded ScreenInit.lua; present in lua/prelude.lua.
+kToggleButtonAlignment	global			=	ScreenInit.lua	(a) global constant/table from the embedded ScreenInit.lua; present in lua/prelude.lua.
+kVAlignBottom	global			=	ScreenInit.lua	(a) global constant/table from the embedded ScreenInit.lua; present in lua/prelude.lua.
+kVAlignCenter	global			=	ScreenInit.lua	(a) global constant/table from the embedded ScreenInit.lua; present in lua/prelude.lua.
+kVAlignTop	global			=	ScreenInit.lua	(a) global constant/table from the embedded ScreenInit.lua; present in lua/prelude.lua.
+playername	global			-	scripts/console.lua:61	(e) stray: console.lua reads a global playername that nothing sets (nil). entername.lua/choosedifficulty.lua have a LOCAL playername = gEnterNameValue.
+random	function	number n	number	@native	TSettings::LuaRandom@0x0003cbd4	(c) TPlatform::Rand() % n + 1 (1..n). n==0 would divide by zero. loading.lua:28 random(maxTipNum). Shadows nothing in Lua 5.0 (math.random is separate).
+require	function	string path		=	luaB_require (pflib base lib)	(a) the Lua 'require' (Loaders.cpp). 127 uses of require('scripts/...lua') and require('locations/...').
+table	global			=	Lua 5.0 stdlib	(a) standard Lua table library.
+tostring	function	any	string	=	Lua 5.0 stdlib	(a) standard Lua.
+# extras
+GetCurrentDifficulty	function		number	@native	TSettings::GetCurrentDifficulty@0x0017adec	(c) registered, never called by shipped Lua. Returns stored difficulty 0..2.
+GetLastLevelCompleted	function		number	@native	TSettings::GetLastLevelCompleted@0x0003ce0a	(c) RIntBlock 'highest_level' (same pref key as the VValue highest_level), 0 if absent. Registered, not called by shipped Lua.
+GetScore	function		number	@native	TSettings::GetScore@0x0003cb14	(c) RIntBlock 'score' of the current user, 0 if absent. Registered, not called by shipped Lua.
+rem	function	number a, number b	number	@native	TSettings::LuaRem@0x0003cbf2	(c) a - b*floor(a/b), truncated to int. Registered, only used in a commented-out line.
+LaunchURL	function	string url	nothing	@native	TSettings::LaunchURL@0x0003cbaa	(c) TPlatform::OpenBrowser(url). Not called by shipped Lua.
+AreQuitting	function		bool	@native	TSettings::AreQuitting@0x0017ae08	(c) returns the SetQuitting flag. Not called by shipped Lua.
+GetManagedUint	function	string name, number default	number	@native	VValueManager::GetUint@0x0005f6b6	(c) like GetManagedInt but floorf then clamp to [0,2^32-1]. Not called by shipped Lua.
+GetManagedReal	function	string name, number default	number	@native	VValueManager::GetReal@0x0005f8e4	(c) float GetValue (no floor). Not called by shipped Lua.
+GetCurrentResult	function		number	@native	VLevelManager::GetCurrentResult@0x00020df4	(c) stored status byte of the current level (0 none/fail, 1 goal, 2 mastered - I). Not called by shipped Lua.
+CheckAllAchievements	function	string category, bool show, number closeCondition	nothing	@native	VAchievementManager::CheckAllAchievements@0x0000455c	(c) registered but NOT called from shipped Lua (C++ ShopWindow calls it with 'endgame','adventure','endless'). Evaluates every achievement of the category ('' = all); newly acquired ones queue for ShowNewAchievements when show is true.
+PurgeSounds	function		nothing	@native	VSoundManager::PurgeSounds@0x0007e84e	(c) registered, not called by shipped Lua (C++ QuitToMainMenu calls it).
+PurgeVOQueue	function		nothing	@native	VSoundManager::PurgeVOQueue@0x0007f532	(c) registered, not called by shipped Lua.
+PlaySFX	function	string file, bool loop	sound instance	@native	VSoundManager::PlaySFX@0x0007efe8	(c) registered, not called from shipped Lua. Also bound as playsound() inside every VSprite animation script.
+PlayMusic	function	string file, bool loop, bool ?	sound instance	@native	VSoundManager::PlayMusic@0x0007f4b4	(c) registered, not called from shipped Lua. Third bool: U.
+PlayVO	function	string file, bool, bool	nothing	@native	VSoundManager::PlayVO@0x0007f794	(c) registered, not called from shipped Lua.
+MainDebug	function		nothing	@native	TMainMenu::MainDebug@0x00026f54	(c) VAchievementManager::AcquireAll. Only reachable from the hidden mainmenu_debug_button (flags cleared in PostChildrenInit).
+UpdateText	function		nothing	-	THiscore::UpdateText@0x0001b4ce	(b) THiscore native (registered with GetState/ScoreAvailable/LaunchPrivacyPolicy); not called from shipped Lua.
+RewardWindowReady	function		nothing	@native	VRewardsWindow::Ready@0x0003a5e4	(c) VRewardsWindow native (C++ name Ready).
+ResetMap	function		nothing	@native	VWorldMap::ResetMap@0x000615f2	(c) VWorldMap native; not called by shipped Lua.
+GetPlotMessage	function		string	@native	VPlotManager::GetPostLevelMessage@0x0002f86e	(c) registered under the Lua name GetPlotMessage (VPlotManager::GetPostLevelMessage); not called by shipped Lua.
+NeedPrelevel	function		bool	@native	VLevel::NeedPrelevel@0x00020246	(c) virtual VLevel method bound in the VLevel ctor; not called by shipped Lua.
+NeedPlot	function		bool	@native	VLevel::NeedPlot@0x00020252	(c) virtual VLevel method bound in the VLevel ctor; not called by shipped Lua.
+ReadyForPrelevel	function		nothing	@native	ShopWindow::ReadyForPrelevel@0x0003f752	(c) ShopWindow native; loading.lua:7 posted as a message command after the fade.
+Lua_DoTransition	function	number type	bool	@native	RTransitionManager::Lua_DoTransition@0x00073a9c	(c) see DoTransition.
+_SetState	function	string key, string value	nothing	=	TGameState::SetState@0x0008bfce	(a) TGameState telemetry store (shared SDK). SetState (ScreenInit.lua) stringifies and calls it. A key starting with '++' increments an integer state; key 'mute' also mutes/restores master volume.
+QueryMuteGame	function		bool	-	TGameState::QueryMuteGame@0x0008ba4a	(b) registered by TGameState ctor; not called by shipped Lua.
+QueryRestartMode	function		bool	-	TGameState::QueryRestartMode@0x0008b820	(b) as above.
+QueryJumpToMenu	function		bool	-	TGameState::QueryJumpToMenu@0x0008b86a	(b) as above.
+SetTopModalOnly	function	bool	nothing	-	TWindowManager::SetTopModalOnly@0x0008c764	(b) registered in TWindowManager::AttachWindowScript; not called by shipped Lua.
+getdelay	function		number	@native	VSprite::GetDelay@0x00049918	(c) global of a VSprite's animation script state (not the main state): returns VSprite::GetDelay (uint). Used inside .anm scripts.
+playsound	function	string file, bool loop	sound instance	@native	VSoundManager::PlaySFX@0x0007efe8	(c) global of a VSprite animation script state, bound to the VSoundManager singleton's PlaySFX (e.g. playsound('audio/sfx/macaw.ogg', false) in a .anm).
+unlock	function		nothing	@native	VPress::Unlock@0x0003368a	(c) global of the anim_largeweight sprite's script of a VPress (and of VInfuse's, VInfuse::Unlock): called from .anm script text.
+drop	function		nothing	@native	VPress::Drop@0x00032a52	(c) global of the anim_door sprite's script (VPress::Drop / VInfuse::Drop).

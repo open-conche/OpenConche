@@ -27,6 +27,9 @@ class Xml {
   bool ok() const { return error_.empty(); }
   const std::string& error() const { return error_; }
   pugi::xml_node root() const { return doc_.document_element(); }
+  // The text of an XML file as stored: a "ZXML" wrapper is inflated, anything else is returned as it is. Empty (with `error` set) when
+  // the wrapper's zlib data is bad.
+  static std::string plainText(std::string_view data, std::string* error = nullptr);
 
  private:
   bool finish(const pugi::xml_parse_result& r);

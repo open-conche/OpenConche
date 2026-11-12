@@ -6,8 +6,8 @@ namespace choco::ui {
 
 // The Options screen's volume sliders, by the child name the Lua gives them, and the per-user preference each one edits.
 // Chocolatier 3 names them `sfxlevelslider` / `musiclevelslider` / `ambientlevelslider` (ui/ui_options.lua); Chocolatier 1
-// and 2 name them `sfxslider` / `musicslider` / `ambientslider` (docs/re/choc1-natives.md section 9, ui/options.lua). Both
-// sets are accepted in every game: the names do not collide, and only the screen that has them is affected.
+// and 2 name them `sfxslider` / `musicslider` / `ambientslider` (docs/re/choc1-natives.md section 9, ui/options.lua), and
+// the Great Chocolate Chase `options_sfxlevel_slider` / `options_musiclevel_slider`. All sets are accepted in every game: the names do not collide, and only the screen that has them is affected.
 struct VolumeSlider {
   const char* name;
   const char* pref;     // soundlevel, musiclevel or ambientlevel: per mille in the user's prefs
@@ -19,6 +19,8 @@ inline constexpr VolumeSlider kVolumeSliders[] = {
     {"sfxlevelslider", "soundlevel", 750, 0}, {"musiclevelslider", "musiclevel", 650, 1},
     {"ambientlevelslider", "ambientlevel", 500, 2}, {"sfxslider", "soundlevel", 750, 0},
     {"musicslider", "musiclevel", 650, 1}, {"ambientslider", "ambientlevel", 500, 2},
+    // The Great Chocolate Chase's two sliders (both default to 750 per mille; there is no ambient channel).
+    {"options_sfxlevel_slider", "soundlevel", 750, 0}, {"options_musiclevel_slider", "musiclevel", 750, 1},
 };
 
 // The slider row for a child name, or null.

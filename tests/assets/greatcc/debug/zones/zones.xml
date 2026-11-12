@@ -1,0 +1,9 @@
+<zonecontroller>
+  <zone name="avatar">
+    <point name="a" x="10" y="10" isentrance="0" isexit="0"/>
+    <point name="b" x="40" y="10" isentrance="0" isexit="0"/>
+    <point name="c" x="40" y="50" isentrance="0" isexit="0"/>
+    <connection first="a" second="b"/>
+    <connection first="b" second="c"/>
+  </zone>
+</zonecontroller>

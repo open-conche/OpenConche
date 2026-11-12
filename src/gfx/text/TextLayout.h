@@ -54,9 +54,11 @@ class TextLayout {
   TextLayout(const TextLayout&) = delete;
   TextLayout& operator=(const TextLayout&) = delete;
 
-  // w x h is the text window. Lines are not clipped, but drawing stops at the first line whose bottom is below h and
-  // skips lines that end above 0 (TTextGraphic::Draw); wide text may still overflow to the right.
-  static TextLayout build(std::string_view utf8, const TextStyle& style, int w, int h);
+  // w x h is the text window used for wrapping and alignment. Lines are not clipped, but drawing stops at the first
+  // line whose bottom is below the clip height and skips lines that end above 0 (TTextGraphic::Draw); wide text may
+  // still overflow to the right. clipH defaults to h (-1); a caller whose draw rect is taller than its layout window
+  // (VTextSprite: layout h - margins, clip full h) passes it separately.
+  static TextLayout build(std::string_view utf8, const TextStyle& style, int w, int h, int clipH = -1);
 
   // TTightText: the window shrinks to the text's measured width plus `pad` (default 3) and its height.
   static RectI measure(std::string_view utf8, const TextStyle& style, int w, int h, int pad = 3);
@@ -76,6 +78,8 @@ class TextLayout {
   // Tight rectangle of the text relative to the window origin (RE 3.5).
   RectI bounds() const;
   int lineCount() const;
+  // How many lines draw() paints: those before the first one that ends below the clip height and not above 0.
+  int drawnLineCount() const;
   // Glyph pen positions, for tests: logical x of each drawn glyph's pen, y of its baseline, and the code point.
   struct GlyphPos {
     std::uint32_t cp;

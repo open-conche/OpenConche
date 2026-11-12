@@ -103,6 +103,23 @@ bool Xml::parse(const Bytes& data) {
   return finish(doc_.load_buffer(data.data(), data.size(), pugi::parse_default, pugi::encoding_auto));
 }
 
+std::string Xml::plainText(std::string_view data, std::string* error) {
+  if (data.size() < 12 || data.substr(0, 4) != "ZXML") return std::string(data);
+  auto u32 = [&](size_t o) {
+    return uint32_t(uint8_t(data[o])) | uint32_t(uint8_t(data[o + 1])) << 8 | uint32_t(uint8_t(data[o + 2])) << 16 | uint32_t(uint8_t(data[o + 3])) << 24;
+  };
+  const size_t compLen = std::min<size_t>(u32(4), data.size() - 12);
+  int outLen = 0;
+  char* raw = stbi_zlib_decode_malloc(data.data() + 12, int(compLen), &outLen);
+  if (!raw) {
+    if (error) *error = "ZXML: bad zlib data";
+    return {};
+  }
+  std::string out(raw, size_t(outLen));
+  std::free(raw);
+  return out;
+}
+
 bool Xml::parse(std::string_view text) {
   if (text.size() >= 4 && text.substr(0, 4) == "ZXML") {
     Bytes bytes(text.size());

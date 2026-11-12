@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -68,15 +69,20 @@ class UserStore {
 
   // LogScore: records the score for the current user in the current game mode's table (HiscoreStore::record rules) and
   // rewrites hiscore.dat when it changed. Nothing is recorded with no current user. True when nothing needed writing or the write worked.
-  bool logScore(double score, std::string_view a, std::string_view b);
+  // `mode` names the table explicitly (a game whose mode is not a per-user pref); empty means hiscoreMode().
+  bool logScore(double score, std::string_view a, std::string_view b, const std::string& mode = {});
   const HiscoreStore& hiscores() const { return hiscores_; }
   // The table the current user's scores go to: the "gamemode" pref, "0" (Story) when unset.
   std::string hiscoreMode() const { return pref("gamemode", "0"); }
   // ScoreAvailable: the current user has a row in the current mode's table.
-  bool scoreAvailable() const { return hiscores_.hasUser(hiscoreMode(), currentName()); }
+  bool scoreAvailable(const std::string& mode = {}) const {
+    return hiscores_.hasUser(mode.empty() ? hiscoreMode() : mode, currentName());
+  }
 
   // Replaces a file below the root through a temporary file and a rename. `rel` must already be a safe relative path.
   bool writeFile(const std::string& rel, std::string_view data) const;
+  // The whole file below the root, or nothing when it is missing (always nothing with an empty root).
+  std::optional<std::string> readFile(const std::string& rel) const;
 
   // File names (relative to the root, top level only) ending in `suffix`, sorted.
   std::vector<std::string> listFiles(std::string_view suffix) const;

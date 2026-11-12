@@ -16,10 +16,17 @@ class TextureUploader;
 
 namespace choco::app {
 
+// The finder's supported-games line: one line of the built-in font, centred in its box (the unit test checks it fits).
+inline constexpr const char* kFinderSupportedLine =
+    "SUPPORTED GAMES: Chocolatier 1, 2 and 3 / Chocolatier 3 - Reforged / The Great Chocolate Chase";
+inline constexpr float kFinderSupportedSize = 10;
+inline constexpr int kFinderSupportedWidth = 680;
+
+
 // One labelled choice of the finder window (docs/design/game-finder.md). The order is the card order,
 // top to bottom; the ids are what --pick-game takes and what finder.txt stores.
 struct FinderVariant {
-  const char* id;         // "choc1" | "choc2" | "choc3" | "choc3-reforged"
+  const char* id;         // "choc1" | "choc2" | "choc3" | "choc3-reforged" | "greatcc"
   const char* moduleId;   // the registry module that must claim the tree
   const char* title;      // the error messages' name of the game
   const char* label;      // the plate label (built-in font: no parentheses, hence "Chocolatier 3 - Reforged")
@@ -40,6 +47,9 @@ struct GameLibrary {
   std::string last;  // the variant to boot ("" = none picked yet)
   std::map<std::string, FinderGameEntry> entries;
   std::string path;  // the config file ("" until loadGameLibrary ran)
+  // `fixbugs = 0|1`: the original-bug switch of the games that have one (docs/design/greatcc.md section 7). Edited by hand;
+  // a missing line is on, and a rewrite keeps an off value.
+  bool fixBugs = true;
 };
 
 // games.cfg, key = value lines; an unparsable or missing file loads as an empty library (the finder is shown).

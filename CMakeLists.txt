@@ -17,7 +17,10 @@ if(CHOCO_RELEASE)
   set(SDL_FORCE_STATIC_VCRT ON CACHE BOOL "" FORCE)
 endif()
 
-project(chocolatier_engine VERSION 1.0 LANGUAGES C CXX)
+project(chocolatier_engine VERSION 1.1 LANGUAGES C CXX)
+if(WIN32)
+  enable_language(RC)  # the executable icon, packaging/icon/openconche.rc.in
+endif()
 if(CHOCO_RELEASE AND NOT MSVC)
   # No build-machine paths in the shipped binary (__FILE__ in SDL's and the engine's assert strings).
   add_compile_options("-ffile-prefix-map=${CMAKE_SOURCE_DIR}=." "-ffile-prefix-map=${CMAKE_BINARY_DIR}=build")
@@ -33,6 +36,15 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 option(CHOCO_WARNINGS_AS_ERRORS "Treat warnings in engine code as errors" ON)
+
+# Debug builds run under AddressSanitizer and UBSan (engine and fetched libraries alike); other build types are untouched.
+if(NOT MSVC AND NOT EMSCRIPTEN)
+  option(CHOCO_SANITIZE "AddressSanitizer and UBSan in Debug builds" ON)
+  if(CHOCO_SANITIZE)
+    add_compile_options("$<$<CONFIG:Debug>:-fsanitize=address,undefined>" "$<$<CONFIG:Debug>:-fno-omit-frame-pointer>")
+    add_link_options("$<$<CONFIG:Debug>:-fsanitize=address,undefined>")
+  endif()
+endif()
 
 include(FetchContent)
 set(FETCHCONTENT_QUIET OFF)
@@ -93,6 +105,11 @@ target_include_directories(lua50 PUBLIC "${lua502_SOURCE_DIR}/include")
 target_include_directories(lua50 PRIVATE "${lua502_SOURCE_DIR}/src")
 set_target_properties(lua50 PROPERTIES LINKER_LANGUAGE C)
 target_compile_definitions(lua50 PRIVATE LUA_OPNAMES)  # luaP_opnames, for luac's listing
+if(NOT MSVC AND NOT EMSCRIPTEN AND CHOCO_SANITIZE)
+  # Lua 5.0.2 casts null and not-yet-initialised pointers through its GCObject union (address arithmetic only) and converts
+  # any number key to int to test whether it is an array index; keep UBSan from reporting those.
+  target_compile_options(lua50 PRIVATE "$<$<CONFIG:Debug>:-fno-sanitize=null,alignment,float-cast-overflow>")
+endif()
 
 # The patched luac, used to check animationscript.lua against the compiled chunk in the Mac build.
 # Note: the patched loader expects the game's opcode dialect, so chunks written by this luac (or string.dump) use stock
@@ -145,6 +162,16 @@ add_custom_command(
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   COMMENT "Embedding prelude.lua and host.lua")
 
+# The window icon (packaging/icon/window128.png) becomes a C array, like the Lua files.
+set(EMBEDDED_ICON_CPP "${CMAKE_CURRENT_BINARY_DIR}/generated/embedded_icon.cpp")
+add_custom_command(
+  OUTPUT "${EMBEDDED_ICON_CPP}"
+  COMMAND ${CMAKE_COMMAND} -DOUT=${EMBEDDED_ICON_CPP} -DPNG=${CMAKE_CURRENT_SOURCE_DIR}/packaging/icon/window128.png
+          -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/EmbedIcon.cmake
+  DEPENDS packaging/icon/window128.png cmake/EmbedIcon.cmake
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "Embedding the window icon")
+
 # stb_vorbis (public domain, v1.22) as a C static library with warnings off, like Lua. Only the memory decoder is used.
 add_library(stb_vorbis STATIC "${CMAKE_CURRENT_SOURCE_DIR}/third_party/stb_vorbis.c")
 target_compile_definitions(stb_vorbis PRIVATE STB_VORBIS_NO_STDIO STB_VORBIS_NO_PUSHDATA_API)
@@ -159,6 +186,7 @@ endif()
 # Engine sources (docs/design/engine-and-games.md section 7): everything outside games/ except the registry.
 set(CHOCO_ENGINE_SOURCES
   ${EMBEDDED_LUA_CPP}
+  ${EMBEDDED_ICON_CPP}
   src/script/Bind.cpp
   src/script/ContentNatives.cpp
   src/script/CoreNatives.cpp
@@ -258,6 +286,8 @@ set(CHOCO_COMMON_SOURCES
 # CHOCO_GAME_<ID> for the registry and the tests.
 option(CHOCO_GAME_CHOC2 "Build Chocolatier 2 support" ON)
 option(CHOCO_GAME_CHOC1 "Build Chocolatier 1 support" ON)
+# The Great Chocolate Chase (docs/design/greatcc.md decision D2): on since level 1 plays from the first customer to the results.
+option(CHOCO_GAME_GREATCC "Build The Great Chocolate Chase support" ON)
 set(CHOCO_GAME_SOURCES)
 set(CHOCO_GAME_TESTS)
 set(CHOCO_GAME_DEFS)
@@ -288,6 +318,7 @@ endfunction()
 include(src/games/choc3/module.cmake)
 include(src/games/choc2/module.cmake)
 include(src/games/choc1/module.cmake)
+include(src/games/greatcc/module.cmake)
 
 add_library(choco_core STATIC ${CHOCO_ENGINE_SOURCES} ${CHOCO_COMMON_SOURCES} ${CHOCO_GAME_SOURCES})
 target_compile_definitions(choco_core PUBLIC ${CHOCO_GAME_DEFS})
@@ -301,6 +332,9 @@ add_executable(openconche src/app/main.cpp)
 # No console window on Windows; --headless/--script re-attach to the parent console (platform/Console.cpp).
 if(WIN32)
   set_target_properties(openconche PROPERTIES WIN32_EXECUTABLE TRUE)
+  # The executable's icon (Explorer, taskbar): packaging/icon/openconche.ico through a resource script.
+  configure_file(packaging/icon/openconche.rc.in "${CMAKE_BINARY_DIR}/packaging/openconche.rc" @ONLY)
+  target_sources(openconche PRIVATE "${CMAKE_BINARY_DIR}/packaging/openconche.rc")
 endif()
 target_link_libraries(openconche PRIVATE choco_core)
 choco_warnings(openconche)
@@ -326,6 +360,9 @@ set(CHOCO_VANILLA_ROOT "" CACHE PATH "Chocolatier 3 Windows install root (its as
 set(CHOCO_MAC_ASSET_DIR "" CACHE PATH "Chocolatier 3 Macintosh assets folder (has cadi/cadilite.spec)")
 set(CHOCO_CHOC2_ASSETS "" CACHE PATH "Chocolatier 2 asset folder (assets.pfp, settings.xml, ...) for the choc2 tests")
 set(CHOCO_CHOC1_ASSETS "" CACHE PATH "Chocolatier 1 asset folder (assets.pfp, settings.xml, ...) for the choc1 tests")
+# The Great Chocolate Chase: the Windows install's assets/ (assets.pfp + loose settings.xml) and the Mac bundle's loose assets/.
+set(CHOCO_GREATCC_ASSETS "" CACHE PATH "Great Chocolate Chase Windows asset folder (assets.pfp, settings.xml, ...) for the greatcc tests")
+set(CHOCO_GREATCC_MAC_ASSETS "" CACHE PATH "Great Chocolate Chase Macintosh asset folder (loose files, settings.xml) for the greatcc tests")
 # The vanilla archive (re/ is not in every checkout); lua_compile_all also accepts an assets directory with assets.pfp.
 if(CHOCO_VANILLA_ROOT AND EXISTS "${CHOCO_VANILLA_ROOT}/assets/assets.pfp")
   add_test(NAME lua_compiles_all_pfp
@@ -377,6 +414,8 @@ target_compile_definitions(engine_tests PRIVATE
   CHOCO_REFORGED_ASSETS="${CMAKE_CURRENT_SOURCE_DIR}/Chocolatier-Decadence-Reforged/assets"
   CHOCO_VANILLA_ASSETS="${CHOCO_VANILLA_ROOT}/assets"
   CHOCO_MAC_ASSETS="${CHOCO_MAC_ASSET_DIR}"
+  CHOCO_GREATCC_ASSETS="${CHOCO_GREATCC_ASSETS}"
+  CHOCO_GREATCC_MAC_ASSETS="${CHOCO_GREATCC_MAC_ASSETS}"
   CHOCO_RE_DOCS="${CMAKE_CURRENT_SOURCE_DIR}/docs/re"
   CHOCO_TEST_ASSETS="${CMAKE_CURRENT_SOURCE_DIR}/tests/assets"
   CHOCO_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/golden"
@@ -516,6 +555,218 @@ if(Python3_Interpreter_FOUND)
               --assets ${CHOCO_CHOC1_ASSETS}
               --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/choc1_finale)
     set_tests_properties(choc1_dice PROPERTIES TIMEOUT 600)
+  endif()
+  # The Great Chocolate Chase (docs/design/greatcc.md section 6): the Windows install (assets.pfp) and the Mac bundle's loose
+  # tree each boot to the main menu; present only where the original is (read only).
+  if(CHOCO_GAME_GREATCC AND EXISTS "${CHOCO_GREATCC_ASSETS}/assets.pfp")
+    add_test(NAME greatcc_boot
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_boot.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_boot)
+    add_test(NAME greatcc_dialogs
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_dialogs.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_dialogs)
+    add_test(NAME greatcc_menus
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_menus.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_menus)
+    add_test(NAME greatcc_users
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_users.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_users)
+    add_test(NAME greatcc_scene
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_scene.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_scene)
+    add_test(NAME greatcc_audio
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_audio.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_audio)
+    add_test(NAME greatcc_worldmap
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_worldmap.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_worldmap)
+    add_test(NAME greatcc_shop
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_shop.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_shop)
+    add_test(NAME greatcc_walk
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_walk.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_walk)
+    add_test(NAME greatcc_machines
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_machines.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_machines)
+    add_test(NAME greatcc_stations
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_stations.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_stations)
+    add_test(NAME greatcc_level1
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_level1.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_level1)
+    set_tests_properties(greatcc_level1 PROPERTIES TIMEOUT 900)
+    add_test(NAME greatcc_tutorial1
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_tutorial1.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_tutorial1)
+    set_tests_properties(greatcc_tutorial1 PROPERTIES TIMEOUT 900)
+    add_test(NAME greatcc_prelevel
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_prelevel.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_prelevel)
+    set_tests_properties(greatcc_prelevel PROPERTIES TIMEOUT 900)
+    add_test(NAME greatcc_meta
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_meta.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_meta)
+    set_tests_properties(greatcc_meta PROPERTIES TIMEOUT 1800)
+    add_test(NAME greatcc_endless
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_endless.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_endless)
+    set_tests_properties(greatcc_endless PROPERTIES TIMEOUT 1800)
+    add_test(NAME greatcc_scores
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_scores.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_scores)
+    set_tests_properties(greatcc_scores PROPERTIES TIMEOUT 1800)
+    add_test(NAME greatcc_debug
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_debug.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_debug)
+    set_tests_properties(greatcc_debug PROPERTIES TIMEOUT 1800)
+    add_test(NAME greatcc_story_smoke
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_story_smoke.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_story_smoke)
+    set_tests_properties(greatcc_story_smoke PROPERTIES TIMEOUT 1800)
+  endif()
+  if(CHOCO_GAME_GREATCC AND EXISTS "${CHOCO_GREATCC_MAC_ASSETS}/settings.xml")
+    add_test(NAME greatcc_boot_mac
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_boot.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_MAC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_boot_mac)
+    add_test(NAME greatcc_dialogs_mac
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_dialogs.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_MAC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_dialogs_mac)
+    add_test(NAME greatcc_menus_mac
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_menus.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_MAC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_menus_mac)
+    add_test(NAME greatcc_users_mac
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_users.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_MAC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_users_mac)
+    add_test(NAME greatcc_scene_mac
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_scene.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_MAC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_scene_mac)
+    add_test(NAME greatcc_audio_mac
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_audio.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_MAC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_audio_mac)
+    add_test(NAME greatcc_worldmap_mac
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_worldmap.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_MAC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_worldmap_mac)
+    add_test(NAME greatcc_shop_mac
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_shop.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_MAC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_shop_mac)
+    add_test(NAME greatcc_walk_mac
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_walk.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_MAC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_walk_mac)
+    add_test(NAME greatcc_machines_mac
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_machines.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_MAC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_machines_mac)
+    add_test(NAME greatcc_stations_mac
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_stations.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_MAC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_stations_mac)
+    add_test(NAME greatcc_level1_mac
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_level1.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_MAC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_level1_mac)
+    set_tests_properties(greatcc_level1_mac PROPERTIES TIMEOUT 900)
+    add_test(NAME greatcc_tutorial1_mac
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_tutorial1.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_MAC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_tutorial1_mac)
+    set_tests_properties(greatcc_tutorial1_mac PROPERTIES TIMEOUT 900)
+    add_test(NAME greatcc_prelevel_mac
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_prelevel.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_MAC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_prelevel_mac)
+    set_tests_properties(greatcc_prelevel_mac PROPERTIES TIMEOUT 900)
+    add_test(NAME greatcc_meta_mac
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_meta.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_MAC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_meta_mac)
+    set_tests_properties(greatcc_meta_mac PROPERTIES TIMEOUT 1800)
+    add_test(NAME greatcc_endless_mac
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_endless.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_MAC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_endless_mac)
+    set_tests_properties(greatcc_endless_mac PROPERTIES TIMEOUT 1800)
+    add_test(NAME greatcc_scores_mac
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_scores.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_MAC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_scores_mac)
+    set_tests_properties(greatcc_scores_mac PROPERTIES TIMEOUT 1800)
+    add_test(NAME greatcc_debug_mac
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_debug.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_MAC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_debug_mac)
+    set_tests_properties(greatcc_debug_mac PROPERTIES TIMEOUT 1800)
+    add_test(NAME greatcc_story_smoke_mac
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_greatcc_story_smoke.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_GREATCC_MAC_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/greatcc_story_smoke_mac)
+    set_tests_properties(greatcc_story_smoke_mac PROPERTIES TIMEOUT 1800)
   endif()
   add_test(NAME audio_events_up_to_date
     COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_audio_events.py --check)

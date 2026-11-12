@@ -23,6 +23,12 @@ struct SheetFrame {
     PointI pos;
   };
   std::vector<Anchor> anchors;
+  // .anm version 2 only. `alpha` multiplies the draw alpha of this frame (the file's per-frame "scale" word is an opacity,
+  // not a size). `xform`, when present, is a row-vector 3x3 (x0 x1 0 / x2 x3 0 / x4 x5 1) applied to the frame quad,
+  // relative to the registration point, before the sprite's own transform. Bounding boxes and hit tests ignore both.
+  float alpha = 1;
+  bool hasXform = false;
+  float xform[6] = {1, 0, 0, 1, 0, 0};
 };
 
 // What the sequence XML says, before any image is loaded

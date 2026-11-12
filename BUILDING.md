@@ -12,7 +12,13 @@
     ./build/engine_tests                             # the unit tests alone
     cmake --build build --target openconche          # the game binary
 
-Build options: `CHOCO_GAME_CHOC1` / `CHOCO_GAME_CHOC2` (default ON) build the per-game modules.
+Build options: `CHOCO_GAME_CHOC1` / `CHOCO_GAME_CHOC2` / `CHOCO_GAME_GREATCC` (default ON) build the per-game modules.
+
+A Debug build runs under AddressSanitizer and UBSan (`CHOCO_SANITIZE`, default ON; not with MSVC or Emscripten); the
+default build type, RelWithDebInfo, and release builds are not instrumented:
+
+    cmake -S . -B build/asan -G Ninja -DCMAKE_BUILD_TYPE=Debug && cmake --build build/asan
+    ./build/asan/engine_tests
 
 ### Release archives
 

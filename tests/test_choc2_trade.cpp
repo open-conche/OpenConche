@@ -110,6 +110,7 @@ TEST_CASE(
       CHECK(dw->hasOnText());
       CHECK(dw->textRuns() == 2);
       e.wm.destroyWindow(*dw);
+      break;  // destroying it changed the list being walked
     }
   e.run("function gNumberPadCallback() hits = hits + 100 end");
   e.type("amount", "6");
@@ -212,7 +213,10 @@ TEST_CASE("DynamicWindow ontext: the listener goes when the window is destroyed 
   REQUIRE(e.run(kReceipt) == 0);
   CHECK(e.wm.messageListenerCount() == 1);
   for (const auto& c : e.wm.topModal()->children())
-    if (auto* dw = dynamic_cast<DynamicWindow*>(c.get())) e.wm.destroyWindow(*dw);
+    if (auto* dw = dynamic_cast<DynamicWindow*>(c.get())) {
+      e.wm.destroyWindow(*dw);
+      break;  // destroying it changed the list being walked
+    }
   e.wm.clearDestroyed();
   CHECK(e.wm.messageListenerCount() == 0);
 }

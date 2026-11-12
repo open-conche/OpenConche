@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<Workbook><Worksheet><Table>
+<Row><Cell><Data>app_title</Data></Cell><Cell><Data>Synthetic Chase</Data></Cell></Row>
+<Row><Cell><Data>hdr_floor</Data></Cell><Cell><Data>Floor</Data></Cell></Row>
+<Row><Cell><Data>txt_floor</Data></Cell><Cell><Data>A better floor</Data></Cell></Row>
+</Table></Worksheet></Workbook>

@@ -7,6 +7,7 @@ Rules (on #include "..." lines under src/ and tests/):
   - games/common includes no games/choc*;
   - games/choc3 includes no games/choc2 or games/choc1;
   - games/choc2 and games/choc1 include no other module than choc3 (and not each other);
+  - games/greatcc includes no other module (only games/common, the SDK and the engine);
   - nothing includes the old paths game/ or script/games/;
   - the text of the old Game enum values occurs nowhere in the engine tree;
   - the code of the engine directories (.h, .cpp, .inc, `//` and `/* */` comments stripped) holds none of BANNED_TOKENS,
@@ -57,10 +58,14 @@ def check_include(rel, inc):
         return "engine code includes '%s'" % inc
     if src == "app":
         return None if inc in APP_ALLOWED else "app/ includes '%s' (allowed: %s)" % (inc, ", ".join(sorted(APP_ALLOWED)))
-    if src == "games/common" and dst.startswith("games/choc"):
+    if src == "games/common" and (dst.startswith("games/choc") or dst == "games/greatcc"):
         return "games/common includes '%s'" % inc
     if src == "games/choc3" and dst in ("games/choc2", "games/choc1"):
         return "games/choc3 includes '%s'" % inc
+    if src == "games/greatcc" and dst.startswith("games/") and dst not in ("games/greatcc", "games/common"):
+        return "games/greatcc includes '%s'" % inc
+    if dst == "games/greatcc" and src not in ("games/greatcc", "tests", "games"):  # "games" = Registry.cpp
+        return "%s includes '%s'" % (src, inc)
     others = ("games/choc2", "games/choc1")
     if src in others and dst in others and dst != src:
         return "%s includes '%s'" % (src, inc)

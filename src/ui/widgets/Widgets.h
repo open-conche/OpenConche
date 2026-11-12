@@ -162,13 +162,16 @@ class ButtonWindow : public LayeredWindow {
   void press();
   // DoCommand: close request, kButtonPress, the command (delivered synchronously), then the posted message if the
   // button is still attached. Returns true when the button was detached from the screen by the command.
-  bool doCommand();
+  virtual bool doCommand();
   // EnableWindow reaches here: drops capture and goes back to the normal image.
   void resetState();
 
+ protected:
+  // StateUpdate: shows the layer the mouse state and toggle bit call for. A subclass may override it (a disabled look).
+  virtual void refreshLayer();
+
  private:
   void setMouseState(int s);
-  void refreshLayer();
   bool visibleChain() const;
   void clearRadioGroup();
 

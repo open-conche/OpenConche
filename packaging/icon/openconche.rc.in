@@ -1,0 +1,2 @@
+// Windows resource script: the executable's icon. Generated copy: build/packaging/openconche.rc.
+1 ICON "@CMAKE_SOURCE_DIR@/packaging/icon/openconche.ico"

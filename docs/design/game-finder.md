@@ -55,8 +55,8 @@ cannot disagree.
 Layout, top to bottom, using a solid backdrop (28,15,10), a one-step-lighter card fill, and grey buttons with a
 one-pixel lighter border:
 
-- Heading "SELECT A GAME", then one **card per installed game**, 0 to 4 cards in `kFinderVariants` order (680x80 at
-  x=60, y = 106 + i*86). Only games with a library entry appear; there are no placeholders. A card shows the game
+- Heading "SELECT A GAME", then one **card per installed game**, 0 to 5 cards in `kFinderVariants` order (680x66 at
+  x=60, y = 106 + i*72). Only games with a library entry appear; there are no placeholders. A card shows the game
   name (16pt, bright), the configured directory beneath it (10pt, dim, elided to the 480-wide box by keeping the
   path's tail, since the end of a path carries the information; the full path shows in the footer while the card is
   hovered, the screen's one tooltip), a 128x32 **Play** button on the right, and a small X (22x22, inverted fill on
@@ -71,8 +71,8 @@ one-pixel lighter border:
   and nothing launches, so the user keeps choosing (Play, another add, or Exit). A duplicate (same variant) is
   refused with a message, except that the same game from a different folder re-points the entry. A folder that
   matches nothing gets "No supported game was found in '<folder>'."
-- An information-only line near the foot, "SUPPORTED GAMES: Chocolatier / Chocolatier 2 / Chocolatier 3 / Chocolatier
-  3 - Reforged", so all four stay visible.
+- An information-only line near the foot, "SUPPORTED GAMES: Chocolatier 1, 2 and 3 / Chocolatier 3 -
+  Reforged / The Great Chocolate Chase", so all five stay visible (it must fit one 680 px line; a unit test checks).
 - A contextual footer, which re-asks the library (it re-validates `last`) rather than trusting the stored line.
   With no playable chosen game: "Select a game to get started. Your choice will be remembered and launched
   automatically next time." With one: "[game] will launch automatically next time. Press Ctrl+Shift+G or click the
@@ -91,6 +91,7 @@ One hit-test helper serves hover and click, so the two cannot disagree.
 | `choc2` | choc2 | the Chocolatier 2 install |
 | `choc3` | choc3, vanilla | either Chocolatier 3 tree without `community/account.lua` |
 | `choc3-reforged` | choc3, community | a `Chocolatier-Decadence-Reforged` checkout |
+| `greatcc` | greatcc | the Great Chocolate Chase install (Windows) or `.app` bundle (Mac) |
 
 ### Resolving and validating a picked folder
 

@@ -1,0 +1,7 @@
+<levelgoals>
+  <levelgoal level="1" goal="100" mastery="160" />
+  <levelgoal level="2" goal="130" mastery="170" />
+  <levelgoal level="3" goal="150" mastery="175" />
+  <levelgoal level="11" goal="200" mastery="450" />
+  <levelgoal level="60" goal="9000" mastery="9500" />
+</levelgoals>
