@@ -14,7 +14,7 @@ struct Options {
   std::string userDir;  // empty = the detected game's default folder
   bool userDirExplicit = false;  // --userdir was given: the switcher keeps it across a game change
   std::string game;  // --game <module id>: skips detection (empty = detect)
-  int scale = 1;
+  double scale = 1;
   bool fullscreen = false;
   bool headless = false;
   std::vector<std::pair<std::string, std::string>> configOverrides;  // --config key=value, over settings.xml

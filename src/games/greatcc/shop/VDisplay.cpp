@@ -98,7 +98,7 @@ void VDisplay::attachCarriable(const std::shared_ptr<VCarriable>& item) {
   slots_[slot] = item;
   addChild(item);
   ++count_;
-  char anchor[24];
+  char anchor[32];
   std::snprintf(anchor, sizeof anchor, "chocolate%zu", slot + 1);
   item->attachToAnchor(anchor);
   item->setLeaf(false);

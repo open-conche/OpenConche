@@ -313,7 +313,7 @@ int Tutorial::trigger(const std::string& name) const {
 bool Tutorial::handleMessage(const ui::Message& m) {
   if (m.type != ui::kButtonPress) return false;
   if (skip_ && m.name == skip_->name()) {
-    if (TutorialManager* m = tutorials()) m->showTutorials(false);
+    if (TutorialManager* tm = tutorials()) tm->showTutorials(false);
     advanceStep();
     return true;
   }

@@ -64,7 +64,7 @@ void FloatingText::draw(ui::DrawContext& ctx) const {
 
 std::unique_ptr<FloatingText> makePaymentText(gfx::text::TextSystem* text, float amount, int x, int y) {
   char buf[32];
-  std::snprintf(buf, sizeof buf, "$%0.2i", static_cast<int>(amount));
+  std::snprintf(buf, sizeof buf, "$%.2i", static_cast<int>(amount));
   return std::make_unique<FloatingText>(FloatingText::Kind::Payment, text, wrap(buf, "000000"), x, y, 150, 30, 25.0f,
                                         gfx::ColorF{1, 1, 1, 1}, 1.0f);
 }

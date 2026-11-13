@@ -62,7 +62,15 @@ TEST_CASE("automated runs need a non-default --userdir") {
 }
 
 TEST_CASE("bad input is rejected") {
-  CHECK_FALSE(parseArgs({"--scale", "3"}).ok());
+  CHECK(parseArgs({"--scale", "3"}).ok());
+  CHECK(parseArgs({"--scale", "1.5"}).options.scale == 1.5);
+  CHECK(parseArgs({"--scale", "1.25"}).options.scale == 1.25);
+  CHECK_FALSE(parseArgs({"--scale", "0.5"}).ok());
+  CHECK_FALSE(parseArgs({"--scale", "9"}).ok());
+  CHECK_FALSE(parseArgs({"--scale", "nan"}).ok());
+  CHECK_FALSE(parseArgs({"--scale", "1e0"}).ok());
+  CHECK_FALSE(parseArgs({"--scale", "1,5"}).ok());
+  CHECK_FALSE(parseArgs({"--scale", "1.5x"}).ok());
   CHECK_FALSE(parseArgs({"--scale", "x"}).ok());
   CHECK_FALSE(parseArgs({"--scale"}).ok());
   CHECK_FALSE(parseArgs({"--frames", "0"}).ok());

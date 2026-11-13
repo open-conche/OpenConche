@@ -159,20 +159,20 @@ TEST_CASE("Choc1 Rollover: a move opens an instant popup from `target` at "
 
   // Moves inside the 10x10 hot rect (the pointer's position at open +-5) keep
   // it; the popup swallows them, so nothing re-opens.
-  const ui::WindowId popupId = popup->id();  // the popup is freed when it closes
   e.move(114, 114);
   e.pump();
   CHECK(popupOf(e) == popup);
   CHECK(e.getNumber("gPopupBuilds") == 1);
-  // The first move outside closes it; that move is handled by the popup, so the
-  // Rollover does not reopen at once.
+  // The first move outside closes it and, in the same event, opens a new one at the pointer (no frame without a
+  // popup while it follows the pointer).
+  const ui::WindowId oldId = popup->id();
   e.move(115, 110);
   e.pump();
-  CHECK(popupOf(e) == nullptr);
-  CHECK_FALSE(e.wm.isMouseListener(popupId));
-  CHECK(e.getNumber("gPopupBuilds") == 1);
-  e.move(116, 110); // the next move over the Rollover opens a new one
+  CHECK_FALSE(e.wm.isMouseListener(oldId));
   CHECK(popupOf(e));
+  CHECK(popupOf(e)->id() != oldId);
+  CHECK(e.getNumber("gPopupBuilds") == 2);
+  e.move(116, 110); // inside the new hot rect: kept
   CHECK(e.getNumber("gPopupBuilds") == 2);
 
   // A second Rollover opening closes the first one's popup (one at a time):

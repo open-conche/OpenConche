@@ -495,7 +495,7 @@ int Session::setup() {
     diag::err("%s\n", window->error().c_str());
     return 1;
   }
-  diag::out("[display] %s, scale %d, logical %dx%d\n",
+  diag::out("[display] %s, scale %g, logical %dx%d\n",
             o.headless ? "headless" : "windowed", window->scale(),
             platform::kLogicalWidth, platform::kLogicalHeight);
   std::fflush(stdout);

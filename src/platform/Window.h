@@ -25,7 +25,7 @@ struct Rect {
 };
 
 struct WindowConfig {
-  int scale = 1;
+  double scale = 1;  // 1 = 800x600; fractions such as 1.5 are fine
   bool fullscreen = false;
   bool headless = false;
   // Headless only: the emulated desktop. Fullscreen resizes the dummy-driver window to this size.
@@ -96,7 +96,7 @@ class Window : public InputInjector {
 
   bool ok() const { return ok_; }
   const std::string& error() const { return error_; }
-  int scale() const { return scale_; }  // the scale actually used after fallback
+  double scale() const { return scale_; }  // the scale actually used after fallback
 
   // The SDL_Renderer*, opaque so only platform code needs SDL headers. For the future gfx module, which casts it
   // inside src/platform or through a platform-side wrapper. Valid while this Window lives.
@@ -204,7 +204,7 @@ class Window : public InputInjector {
   int windowedW_ = kLogicalWidth, windowedH_ = kLogicalHeight;  // headless: the size fullscreen returns to
   int reportedW_ = 0, reportedH_ = 0;                           // the output size the app was last told about
   bool textInput_ = false;
-  int scale_ = 1;
+  double scale_ = 1;
   int displayWidth_ = 2560, displayHeight_ = 1440;
   std::string error_;
 };
