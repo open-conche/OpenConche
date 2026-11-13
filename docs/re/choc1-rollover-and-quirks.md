@@ -100,6 +100,9 @@ the tint is reset to `(1,1,1,1)`.
 * Mouse up (slot 16, `0041ad60`): closes the popup, then runs the Lua text `table.insert(gCommandQueue,DispatchRolloverClick)` (string at `004e8ab4`),
   then plays `clicksound` if set. Returns true. Any mouse up that reaches the popup does this, whether the press started there or not (inference: the
   listener list delivers it, section 1).
+* Engine deviation (pulser phase): the exe's popup pulser and a `UtilPulseImage` pulser on the same image are independent 100 ms tasks, so
+  their writes interleave. The engine starts the popup's pulser on the running `UtilPulseImage` pulser's phase (`index`, next tick) so a hovered
+  building pulses at the normal speed during the port intro.
 * Close (`0041ac60`): stops the pulser and resets the `BitmapTint`; removes the popup from the manager's lists and from its parent
   (parent slot 10, `+0x28`); clears the shared open flag in the destructor (`0041ab50`). There is no fade in or out.
 * Not closed by: leaving the Rollover's rectangle (only the hot rect counts), a key press, the Rollover being destroyed (inference; not read).

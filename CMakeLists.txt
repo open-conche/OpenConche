@@ -18,6 +18,11 @@ if(CHOCO_RELEASE)
 endif()
 
 project(chocolatier_engine VERSION 1.1 LANGUAGES C CXX)
+
+# Visual Studio generators compile one file at a time per project unless /MP is set (/m only parallelises across projects).
+if(MSVC)
+  add_compile_options(/MP)
+endif()
 if(WIN32)
   enable_language(RC)  # the executable icon, packaging/icon/openconche.rc.in
 endif()

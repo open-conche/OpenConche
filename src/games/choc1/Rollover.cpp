@@ -49,7 +49,12 @@ bool RolloverPopup::onMouseMove(int x, int y) {
   const int sx = static_cast<int>(o.x) + x, sy = static_cast<int>(o.y) + y;
   if (sx < hot_.x || sx >= hot_.x + hot_.w || sy < hot_.y ||
       sy >= hot_.y + hot_.h)
+  {
+    // Closing here and letting the same move fall through to the hit test opens the next popup in this event
+    // (no frame without one while it follows the pointer), and only if the Rollover is what the pointer reaches.
     close();
+    return false;
+  }
   return true; // always handled
 }
 
@@ -184,6 +189,14 @@ void RolloverWindow::openPopup(int sx, int sy) {
     it->count = INT_MAX / 2;
     it->index = 0;
     it->nextMs = world->nowMs() + Choc1Pulse::kPeriodMs;
+    // A UtilPulseImage already pulsing this image (the port's intro flash) writes the same tint on its own 100 ms
+    // phase; two phases interleave into a double-speed flicker, so the popup's pulser joins the running one's phase.
+    for (const Choc1Pulse &other : world->pulses)
+      if (!other.popup && other.name == image_) {
+        it->index = other.index;
+        it->nextMs = other.nextMs;
+        break;
+      }
   }
   if (!popupSound_.empty())
     wm.playSound(popupSound_, false);

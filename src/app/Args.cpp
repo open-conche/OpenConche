@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <charconv>
+#include <cstdlib>
 #include <filesystem>
 
 #include "app/Finder.h"
@@ -29,6 +30,19 @@ bool parseInt(const std::string& s, long& out) {
   const char* end = s.data() + s.size();
   auto [p, ec] = std::from_chars(s.data(), end, out);
   return ec == std::errc() && p == end;
+}
+
+// A window scale: a plain decimal number (no hex, no inf/nan, always '.' as the separator) from 1 to 8.
+bool parseScale(const std::string& s, double& out) {
+  if (s.empty()) return false;
+  for (char c : s) {
+    if (!(c >= '0' && c <= '9') && c != '.') return false;
+  }
+  char* end = nullptr;
+  const double d = std::strtod(s.c_str(), &end);
+  if (end != s.c_str() + s.size() || !(d >= 1.0 && d <= 8.0)) return false;
+  out = d;
+  return true;
 }
 
 std::string pathKey(const std::string& p) {
@@ -126,13 +140,13 @@ ParseResult parseArgs(const std::vector<std::string>& args) {
       o.configOverrides.emplace_back(v.substr(0, eq), v.substr(eq + 1));
     } else if (a == "--scale") {
       std::string v;
-      long n = 0;
       if (!value(v)) return r;
-      if (!parseInt(v, n) || (n != 1 && n != 2)) {
-        r.error = "--scale must be 1 or 2, got '" + v + "'";
+      double d = 0;
+      if (!parseScale(v, d)) {
+        r.error = "--scale must be a number from 1 to 8 (e.g. 1.5), got '" + v + "'";
         return r;
       }
-      o.scale = static_cast<int>(n);
+      o.scale = d;
     } else if (a == "--seed") {
       std::string v;
       if (!value(v)) return r;
@@ -260,7 +274,7 @@ std::string usageText() {
          "  --import-prefs <file>      import a COPY of the original game's prefs.dat (users, prefs, saves) into --userdir after backing\n"
          "                             it up to <userdir>-backup-<timestamp>, print a summary and exit; never touches the file\n"
          "  --import-into-default      allow --import-prefs to write into the default user folder (your real profile)\n"
-         "  --scale 1|2                initial window size 800x600 or 1600x1200 (falls back if it does not fit); the window\n"
+         "  --scale <1..8>             initial window size 800x600 times the scale, e.g. 1, 1.5 or 2 (falls back to the next\n                             whole number down if it does not fit); the window\n"
          "                             is resizable and the picture is letterboxed to whatever size it gets\n"
          "  --fullscreen               borderless desktop fullscreen, 4:3 letterboxed (Alt+Enter, F11 or the OS control toggle it)\n"
          "  --headless                 no display: dummy video driver, software renderer, simulated 60 Hz clock\n"

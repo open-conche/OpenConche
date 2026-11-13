@@ -16,7 +16,8 @@
 // being built, places the popup at the pointer plus the offsets (or at the
 // absolute anchor plus the offsets when both xAbsolute and yAbsolute are >= 1),
 // keeps it inside 800x600 with no margin, and shows it at once (no fade). The
-// popup closes on the first move outside its hot rectangle, or on any mouse up,
+// popup closes on the first move outside its hot rectangle (that move then reaches the hit test, so a new one opens
+// at once if the pointer is still over the Rollover), or on any mouse up,
 // which also queues DispatchRolloverClick and plays `clicksound`.
 
 #include <string>

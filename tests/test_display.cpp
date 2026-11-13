@@ -13,6 +13,12 @@ TEST_CASE("scale fallback") {
   CHECK(chooseScale(1, 1920, 1080) == 1);
   CHECK(chooseScale(2, 640, 480) == 1);  // never below 1
   CHECK(chooseScale(0, 4000, 4000) == 1);
+  CHECK(chooseScale(1.5, 1920, 1080) == 1.5);  // 1200x900 fits
+  CHECK(chooseScale(1.5, 1100, 1080) == 1);    // 1200 wide does not: the whole number below
+  CHECK(chooseScale(3.5, 2560, 1440) == 2);    // 3.5 and 3 do not fit 1440 tall, 2 does
+  CHECK(choco::platform::scaledWindowSize(800, 1.5) == 1200);
+  CHECK(choco::platform::scaledWindowSize(600, 1.25) == 750);
+  CHECK(choco::platform::scaledWindowSize(800, 1.37) == 1096);
 }
 
 TEST_CASE("the cursor colour key: pure magenta becomes transparent, everything else stays") {

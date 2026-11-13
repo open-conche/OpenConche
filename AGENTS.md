@@ -57,12 +57,12 @@ JPEG only, from nothings/stb commit 31c1ad37456438565541f4919958214b6e762fb4) de
 
 ## Run
 
-    build/openconche [--assets dir | --no-assets] [--userdir dir, required for automated runs] [--scale 1|2] [--fullscreen] [--headless]
+    build/openconche [--assets dir | --no-assets] [--userdir dir, required for automated runs] [--scale 1..8] [--fullscreen] [--headless]
                 [--display-size WxH] [--script file] [--screenshot path] [--log-unimplemented file] [--frames n]
                 [--dump-windows] [--config key=value] [--log file] [--log-input] [--cheatmode] [--run file.lua]
                 [--import-prefs prefs.dat [--import-into-default]]
 
-- `--scale 2` is a 1600x1200 window at start; if it plus the window frame does not fit the usable desktop the largest scale that fits is used and logged.
+- `--scale n` (1 to 8, fractions allowed: `--scale 1.5` is 1200x900, `--scale 2` is 1600x1200) sets the window size at start; if it plus the window frame does not fit the usable desktop the next whole number down that fits is used and logged.
   The window is resizable (minimum 800x600) and the 800x600 picture is letterboxed to whatever size it gets and text is rasterised again at the
   new output scale. Each size change logs `[display] resized, output WxH, scale S`.
 - `--fullscreen` is borderless desktop fullscreen, 4:3 letterboxed with black bars. Alt+Enter and F11 toggle it, and so do the OS's own controls (the macOS green button, a window menu); every change is logged and the preference saved.

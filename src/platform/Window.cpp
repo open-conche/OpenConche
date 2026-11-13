@@ -88,9 +88,9 @@ Window::Window(Platform& platform, const WindowConfig& config)
   SDL_Rect usable{};
   const bool haveUsable = !headless_ && SDL_GetDisplayUsableBounds(SDL_GetPrimaryDisplay(), &usable) && usable.w > 0;
   if (haveUsable) {
-    int fitted = chooseScale(scale_, usable.w - kMarginW, usable.h - kMarginH);
+    const double fitted = chooseScale(scale_, usable.w - kMarginW, usable.h - kMarginH);
     if (fitted != scale_) {
-      diag::err("[display] scale %d does not fit the %dx%d desktop, using scale %d\n", scale_, usable.w,
+      diag::err("[display] scale %g does not fit the %dx%d desktop, using scale %g\n", scale_, usable.w,
                    usable.h, fitted);
       scale_ = fitted;
     }
@@ -103,7 +103,8 @@ Window::Window(Platform& platform, const WindowConfig& config)
 #endif
   if (config.fullscreen && !headless_) flags |= SDL_WINDOW_FULLSCREEN;  // no mode set: borderless desktop fullscreen
 
-  impl_->window = SDL_CreateWindow(config.title.c_str(), kLogicalWidth * scale_, kLogicalHeight * scale_, flags);
+  impl_->window = SDL_CreateWindow(config.title.c_str(), scaledWindowSize(kLogicalWidth, scale_),
+                                      scaledWindowSize(kLogicalHeight, scale_), flags);
   if (!impl_->window) {
     error_ = std::string("SDL_CreateWindow failed: ") + SDL_GetError();
     return;
@@ -121,11 +122,11 @@ Window::Window(Platform& platform, const WindowConfig& config)
   if (haveUsable && !config.fullscreen) {
     int top = 0, left = 0, bottom = 0, right = 0;
     if (SDL_GetWindowBordersSize(impl_->window, &top, &left, &bottom, &right)) {
-      while (scale_ > 1 && (kLogicalWidth * scale_ + left + right > usable.w ||
-                            kLogicalHeight * scale_ + top + bottom > usable.h)) {
-        --scale_;
-        diag::err("[display] window with frame does not fit the desktop, using scale %d\n", scale_);
-        SDL_SetWindowSize(impl_->window, kLogicalWidth * scale_, kLogicalHeight * scale_);
+      while (scale_ > 1 && (scaledWindowSize(kLogicalWidth, scale_) + left + right > usable.w ||
+                            scaledWindowSize(kLogicalHeight, scale_) + top + bottom > usable.h)) {
+        scale_ = std::max(1.0, std::ceil(scale_) - 1);
+        diag::err("[display] window with frame does not fit the desktop, using scale %g\n", scale_);
+        SDL_SetWindowSize(impl_->window, scaledWindowSize(kLogicalWidth, scale_), scaledWindowSize(kLogicalHeight, scale_));
       }
     }
   }
@@ -135,8 +136,8 @@ Window::Window(Platform& platform, const WindowConfig& config)
     return;
   }
   SDL_SetRenderLogicalPresentation(impl_->renderer, kLogicalWidth, kLogicalHeight, SDL_LOGICAL_PRESENTATION_LETTERBOX);
-  windowedW_ = kLogicalWidth * scale_;
-  windowedH_ = kLogicalHeight * scale_;
+  windowedW_ = scaledWindowSize(kLogicalWidth, scale_);
+  windowedH_ = scaledWindowSize(kLogicalHeight, scale_);
   if (!headless_) SDL_SetRenderVSync(impl_->renderer, 1);
   else if (config.fullscreen) applyFullscreen(true);
   reportedFullscreen_ = isFullscreen();  // what SDL accepted, not what was asked
@@ -462,6 +463,9 @@ void Window::deliverFolderPick() {
     folderPickError_ = folderState_->error;
     folderState_->result.reset();
   }
+  // Once the native dialog is gone the window looks focused, but SDL has not been told it is key again (it only
+  // finds out from the next click, which it then discards as a focus click). Take focus back explicitly.
+  if (!headless_) SDL_RaiseWindow(impl_->window);
   if (folderOnDone_) folderOnDone_(*result);
 }
 
