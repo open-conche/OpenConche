@@ -1091,7 +1091,11 @@ void Session::step() {
   if (!o.headless && !foreground) {
     backgroundDelayMs = std::min(backgroundDelayMs + 10, 1000);
     diag::setAppState(foreground, backgroundDelayMs);
+#ifndef __EMSCRIPTEN__
+    // On the web SDL_Delay is a busy-wait (no Asyncify), which pins the tab at 100%; the browser already
+    // throttles requestAnimationFrame for a tab that is not visible.
     SDL_Delay(static_cast<std::uint32_t>(backgroundDelayMs));
+#endif
   } else {
     backgroundDelayMs = 0;
     diag::setAppState(foreground, 0);
