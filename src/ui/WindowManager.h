@@ -32,6 +32,8 @@ class SheetCache;
 
 namespace choco::ui {
 
+class ButtonWindow;
+
 // Owns every window: the modal chain (Screen at the bottom), the deferred-destruction list, the id map, the creation
 // stack and the message queue (window-system design sections 2, 4 and 5).
 class WindowManager : public WindowQuery {
@@ -135,6 +137,33 @@ class WindowManager : public WindowQuery {
   // A filter that sees every input event before the windows do (and before the escape hook); returning true consumes the
   // event. Empty = none. A game that blocks input while an overlay plays installs one.
   void setInputFilter(std::function<bool(const InputEvent&)> f) { inputFilter_ = std::move(f); }
+  // ---- enhancement hooks (docs/design/enhancements.md section 3); installed by the script layer only when on ----
+  // Wheel hook: called with every shown window of the top modal under the pointer, front to back (a parent after its
+  // children), and the notches (positive up). True means handled. Empty = the wheel is dropped.
+  using WheelHook = std::function<bool(const std::vector<Window*>& under, int notches)>;
+  void setWheelHook(WheelHook f) { wheelHook_ = std::move(f); }
+  bool hasWheelHook() const { return static_cast<bool>(wheelHook_); }
+  // Command hook: consulted when a button with a command or `close` is pressed, with the button's name, its command
+  // (null when it has none) and its `close` flag. A valid result replaces the press: it is delivered like the command
+  // and the close request is not made. An invalid result leaves the press as it was.
+  using CommandHook = std::function<script::LuaRef(const std::string& name, const script::LuaRef* original, bool closes)>;
+  void setCommandHook(CommandHook f) { commandHook_ = std::move(f); }
+  const CommandHook& commandHook() const { return commandHook_; }
+  // Text limit hook: consulted by a non-UTF-8 TextEdit for every typed character, with the field's name, its `length`
+  // and its `ignore` string. A result of 1 or more replaces the number of characters the field holds (the original holds
+  // `length - 1`); anything else leaves the original limit.
+  using TextLimitHook = std::function<int(const std::string& name, int length, const std::string& ignore)>;
+  void setTextLimitHook(TextLimitHook f) { textLimitHook_ = std::move(f); }
+  const TextLimitHook& textLimitHook() const { return textLimitHook_; }
+  // The button the command hook is being consulted for (null outside the call); a hook identifies an unnamed button by it.
+  const ButtonWindow* hookedButton() const { return hookedButton_; }
+  void setHookedButton(const ButtonWindow* b) { hookedButton_ = b; }
+  // Presses the first button called `name` in the top modal whose whole chain up to the modal is shown. False when
+  // there is none.
+  bool pressButtonNamed(const std::string& name);
+  // That button, or null.
+  ButtonWindow* findPressableButton(const std::string& name) const;
+
   // Chocolatier 2 era window system (TWindow::HandleEvent, C2 0x34028): when an unhandled mouse event falls through to
   // the sibling behind, that sibling's children are searched with the point still in the PARENT's coordinates (0x3412b
   // picks the sibling, 0x3414f searches its children, 0x34170-0x34194 descends subtracting only the child's offset).
@@ -219,6 +248,12 @@ class WindowManager : public WindowQuery {
   // ---- messages ----
   void post(Message m) { queue_.push_back(std::move(m)); }
   std::size_t pendingMessages() const { return queue_.size(); }
+  // Whether a close request for that modal is waiting in the queue.
+  bool closePending(WindowId modal) const {
+    for (const Message& m : queue_)
+      if (m.type == kCloseWindow && m.target == modal) return true;
+    return false;
+  }
   // Message listeners: `fn` is called for every message of `type` that is handled, before the window climb, for as long as
   // the window `owner` is alive (a stale entry is dropped on the next matching message). Used by the Chocolatier 2
   // DynamicWindow `ontext` hook, which is a sibling of the text field and so not on its climb path.
@@ -300,6 +335,7 @@ class WindowManager : public WindowQuery {
   void handle(const Message& m);
   void notifyListeners(const Message& m);
   void routeMouse(const InputEvent& ev);
+  void routeWheel(const InputEvent& ev);
   bool legacyFallThroughPoint_ = false;
   int spriteHitAlpha_ = 0;
   bool legacyPopupFader_ = false;
@@ -356,6 +392,10 @@ class WindowManager : public WindowQuery {
   std::function<void(const std::string&, float)> volume_;
   ScriptSink* sink_ = nullptr;
   std::function<bool(const InputEvent&)> inputFilter_;
+  WheelHook wheelHook_;
+  TextLimitHook textLimitHook_;
+  CommandHook commandHook_;
+  const ButtonWindow* hookedButton_ = nullptr;
   std::function<bool(const Message&)> messageHook_;
   int hookMin_ = 0, hookMax_ = -1;
   std::function<void(DrawContext&)> overlayDrawer_;

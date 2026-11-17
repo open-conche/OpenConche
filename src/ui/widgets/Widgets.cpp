@@ -403,13 +403,24 @@ bool ButtonWindow::doCommand() {
   const Window* modal = parent();
   while (modal && !modal->isModal()) modal = modal->parent();
   ScriptSink* sink = wm.scriptSink();
-  if (close_ && modal) {
+  // The command hook (enhancements): a function it returns replaces the press, close included.
+  script::LuaRef replacement;
+  if (sink && wm.commandHook() && (command_.valid() || close_)) {
+    const ButtonWindow* outer = wm.hookedButton();  // a hook may press another button: restore, not clear
+    wm.setHookedButton(this);
+    replacement = wm.commandHook()(name(), command_.valid() ? &command_ : nullptr, close_);
+    wm.setHookedButton(outer);
+  }
+  if (close_ && modal && !replacement.valid()) {
     wm.post({kCloseWindow, WindowManager::idString(modal->id()), modal->id()});
     if (sink) sink->setGlobalString("gReturnValue", name());
   }
   Message pressed{kButtonPress, name(), parent() ? parent()->id() : 0};
   if (sendToParent_ && wm.topModal()->parent()) pressed.target = wm.topModal()->parent()->id();
-  if (command_.valid() && sink) {
+  if (replacement.valid()) {
+    Message cmd{kCommandOnly, "LuaAction:" + name(), 0};
+    sink->deliver(&cmd, &replacement);
+  } else if (command_.valid() && sink) {
     Message cmd{kCommandOnly, "LuaAction:" + name(), 0};
     sink->deliver(&cmd, &command_);  // synchronous: the script may rebuild the whole screen, deletion is deferred
   }

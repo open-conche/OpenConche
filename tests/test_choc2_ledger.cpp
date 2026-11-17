@@ -394,6 +394,32 @@ TEST_CASE("UpdateBadge does not rebuild the badge; it counts the money up in 100
   REQUIRE(e.run("UpdateBadge(5)") == 0);
 }
 
+TEST_CASE("Enhance.smoothMoney: the money counts in 20 steps of 50 ms and the quest bar keeps its 100 ms step") {
+  LedgerEnv e;
+  REQUIRE(e.booted);
+  e.buildLedger("{money = 1000, rank = 1, score = 250}", "Enhance = {smoothMoney = true};");
+  auto* l = e.get<Ledger>("ledger");
+  REQUIRE(l);
+  ui::Window* quest = e.win("quest");
+  REQUIRE(quest);
+  REQUIRE(e.run("gSim.money = 11000; UpdateBadge(gSim); SetQuestHint('Find a recipe')") == 0);
+  CHECK(l->counter().delta == 500);
+  double t = 0;
+  e.tick(&t, 1);  // 50 ms
+  CHECK(l->counter().display == 1500);
+  CHECK(quest->rect().y == 53);
+  e.tick(&t, 1);  // 100 ms
+  CHECK(l->counter().display == 2000);
+  CHECK(quest->rect().y == 27);
+  e.tick(&t, 2);
+  CHECK(quest->rect().y == 1);
+  e.tick(&t, 16);
+  CHECK(l->counter().display == 11000);
+  CHECK(e.label("money").find("11,000") != std::string::npos);
+  REQUIRE(e.run("gSim.money = -5; UpdateBadge(gSim)") == 0);
+  CHECK(l->counter().target == 0);
+}
+
 TEST_CASE("SetQuestHint writes quest_text and the bar slides 26 px per 100 ms tick: 53, 27, 1, 0") {
   LedgerEnv e;
   REQUIRE(e.booted);

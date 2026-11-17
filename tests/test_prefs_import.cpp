@@ -402,10 +402,10 @@ TEST_CASE("import command: backup folder names, copies, and flag checks") {
   CHECK_FALSE(parseArgs({"--import-prefs", "p.dat"}).ok());  // default user dir refused
   CHECK(parseArgs({"--import-prefs", "p.dat"}).error.find("--import-into-default") != std::string::npos);
   CHECK(parseArgs({"--import-prefs", "p.dat", "--userdir", dir}).ok());
-  CHECK(parseArgs({"--import-prefs", "p.dat", "--userdir", choco::platform::defaultUserDir("Chocolatier3"), "--import-into-default"}).ok());
+  CHECK(parseArgs({"--import-prefs", "p.dat", "--userdir", choco::platform::defaultGameUserDir("Chocolatier3"), "--import-into-default"}).ok());
   CHECK(parseArgs({"--import-prefs", "p.dat", "--import-into-default"}).ok());
   CHECK_FALSE(parseArgs({"--import-into-default"}).ok());
-  CHECK_FALSE(parseArgs({"--import-prefs", "p.dat", "--userdir", choco::platform::defaultUserDir("Chocolatier3")}).ok());
+  CHECK_FALSE(parseArgs({"--import-prefs", "p.dat", "--userdir", choco::platform::defaultGameUserDir("Chocolatier3")}).ok());
 }
 
 TEST_CASE("import flags: never write next to the source or into a PlayFirst folder") {
@@ -431,8 +431,8 @@ TEST_CASE("user-dir guard is case-insensitive even when the folder does not exis
   const char* old = std::getenv("HOME");
   const std::string saved = old ? old : "";
   setenv("HOME", d.str().c_str(), 1);
-  const std::string wrong = d.str() + "/library/application support/chocolatier3";
-  CHECK(choco::app::samePath(wrong, choco::platform::defaultUserDir("Chocolatier3")));
+  const std::string wrong = d.str() + "/library/application support/openconche/chocolatier3";
+  CHECK(choco::app::samePath(wrong, choco::platform::defaultGameUserDir("Chocolatier3")));
   CHECK_FALSE(choco::app::parseArgs({"--headless", "--userdir", wrong}).ok());
   CHECK_FALSE(choco::app::parseArgs({"--import-prefs", "x.dat", "--userdir", wrong}).ok());
   if (old) setenv("HOME", saved.c_str(), 1);

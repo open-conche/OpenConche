@@ -4,7 +4,7 @@
 
 namespace choco::platform {
 
-// Default per-user folder for settings and saves (UTF-8):
+// Default per-user data root (UTF-8):
 // macOS ~/Library/Application Support/<leaf>, Windows %APPDATA%\<leaf>,
 // elsewhere $XDG_DATA_HOME/<leaf> (falling back to ~/.local/share/<leaf>).
 // Empty if no home folder can be found. Does not create anything.
@@ -12,6 +12,10 @@ namespace choco::platform {
 // `leaf` is the folder name, the game profile's `userDirName` (each game has its own, so one game never loads another's
 // saves); it is lower-cased on the XDG path.
 std::string defaultUserDir(const std::string& leaf);
+
+// Per-game user folder: a subfolder of the engine's own folder, <defaultUserDir("OpenConche")>/<leaf> (lower-cased on the
+// XDG path), so the games' data never litters the user data root. `leaf` is the profile's `userDirName`.
+std::string defaultGameUserDir(const std::string& leaf);
 
 // Folder holding the running executable (UTF-8, from SDL_GetBasePath), or empty if unknown.
 std::string executableDir();

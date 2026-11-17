@@ -32,7 +32,7 @@ script, play-test and diagnose the engine, and what to know before debugging it.
 The first configure needs network (SDL 3.x, Lua 5.0.2, doctest and pugixml are fetched). Lua 5.0.2 is pinned by
 SHA-256 `a6c85d85f912e1c321723084389d63dee7660b81b8292452b190ea7190dd73bc` in `CMakeLists.txt`. Build options:
 `CHOCO_GAME_CHOC1` / `CHOCO_GAME_CHOC2` (both default ON) build the per-game modules; with one off, the
-remaining build answers the missing game's `--game` with a one-line refusal. `CHOCO_GAME_GREATCC` (The Great Chocolate Chase, default ON; `docs/design/greatcc.md`) builds `src/games/greatcc/`; its tests read `CHOCO_GREATCC_ASSETS` (the Windows install's `assets/`) and `CHOCO_GREATCC_MAC_ASSETS` (the Mac bundle's); both are empty by default and the tests are skipped without them. `fixbugs = 0` in `games.cfg` (or `--config fixbugs=0`) switches that game's original-bug fixes off; automated runs never read `games.cfg` and default to on. `-DCHOCO_WARNINGS_AS_ERRORS=OFF`
+remaining build answers the missing game's `--game` with a one-line refusal. `CHOCO_GAME_GREATCC` (The Great Chocolate Chase, default ON; `docs/design/greatcc.md`) builds `src/games/greatcc/`; its tests read `CHOCO_GREATCC_ASSETS` (the Windows install's `assets/`) and `CHOCO_GREATCC_MAC_ASSETS` (the Mac bundle's); both are empty by default and the tests are skipped without them. `fixbugs = 0` in `games.cfg` (or `--config fixbugs=0`) switches that game's original-bug fixes off; automated runs never read `games.cfg` and default to on. `<variant>.enhancements = 0` in `games.cfg` (the launcher card's Enhancements checkbox, or `--config enhancements=0|1`) switches a game's engine-owned conveniences off (`docs/design/enhancements.md`); a missing line is on, and automated runs never read `games.cfg` and default to off. `-DCHOCO_WARNINGS_AS_ERRORS=OFF`
 (default ON, `-Wall -Wextra` / `/W4`). The suite's game tests point at local game copies through
 `CHOCO_VANILLA_ASSETS` / `CHOCO_REFORGED_ASSETS` / `CHOCO_CHOC2_ASSETS` / `CHOCO_CHOC1_ASSETS`
 (`CMakeLists.txt`); the tests whose assets are missing are skipped.
@@ -76,7 +76,7 @@ JPEG only, from nothings/stb commit 31c1ad37456438565541f4919958214b6e762fb4) de
 - `--frames n` quits after n frames.
 - `--no-assets` skips the default search below and shows the test scene (a one-line message on stderr); combined with `--assets` it is a usage error (exit 2).
 - `--assets` is the game data. Without it, an interactive run boots the launcher's saved choice (`OpenConche/games.cfg`, see docs/design/game-finder.md) or shows the game launcher when there is none; an automated/headless run never opens a dialog (and never reads the machine's library), warns on stderr and shows the test scene. A bad `--assets` directory exits 2 with a message. `--userdir` defaults to
-  `~/Library/Application Support/Chocolatier3` (macOS), `%APPDATA%\Chocolatier3` (Windows) or `$XDG_DATA_HOME/chocolatier3`; it is created only by the first write to a `user:` path.
+  `~/Library/Application Support/OpenConche/Chocolatier3` (macOS), `%APPDATA%\OpenConche\Chocolatier3` (Windows) or `$XDG_DATA_HOME/openconche/chocolatier3`; it is created only by the first write to a `user:` path.
   `--log-unimplemented file` writes `name<TAB>count` for every stubbed native that was called, most frequent first, at exit.
   `--seed n` seeds `RandRange` (default 1 when headless, time-based otherwise; the seed is logged).
 - `--game choc3|choc2|choc1` says which game the assets are; without it the engine detects it from `settings.xml` (`game`) and
@@ -124,6 +124,8 @@ Run scripts with `--headless --userdir <scratch dir> --script file`; `--script` 
     screenshot-logical <path>  PNG of the 800x600 logical area only (downscaled if the output scale is not 1)
     resize W H         the window is dragged to W x H window pixels (whole numbers, 1 to 16384); the picture is letterboxed
                        to it and `[display] resized, output WxH, scale S` is logged. Ends the frame, like `key`.
+    wheel x y N        the mouse wheel turned N notches (signed, non-zero, positive up) with the pointer at logical x y.
+                       It scrolls only when enhancements are on (`--config enhancements=1`); otherwise it is dropped.
     click-window x y   (also move-window, down-window, up-window) the same in window coordinates, no logical mapping
     expect-window <name> [timeout_ms]
                        waits (default 5000 simulated ms) until a window of that name is shown, else fails the run with

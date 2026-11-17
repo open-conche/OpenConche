@@ -30,6 +30,7 @@ class BitmapWindow : public Window {
   void setScale(double scale);
   void setFlips(bool h, bool v) { hflip_ = h, vflip_ = v; }
   const std::shared_ptr<gfx::Texture>& texture() const { return texture_; }
+  const std::string& image() const { return image_; }
   double scale() const { return scale_; }
   // A texture made in memory (Chocolatier 2's colormask): replaces the image and resizes the window to it at the current scale.
   void setTexture(std::shared_ptr<gfx::Texture> tex);
@@ -152,6 +153,9 @@ class ButtonWindow : public LayeredWindow {
   // The `label` style key as written ("cancel" for a TextButton{label="cancel"}), kept for the Chocolatier 2 Enter rule.
   const std::string& labelKey() const { return labelKey_; }
   bool hasCommand() const { return command_.valid(); }
+  const script::LuaRef& command() const { return command_; }
+  // Every window from this button up to its modal is shown.
+  bool visibleChain() const;
   void setCommand(script::LuaRef fn) { command_ = std::move(fn); }
   void setClickMask(std::shared_ptr<gfx::HitMask> m) { mask_ = std::move(m); }
   // The point (button coordinates) is on the button: inside its rectangle and, with a mask, on a lit mask pixel (the
@@ -172,7 +176,6 @@ class ButtonWindow : public LayeredWindow {
 
  private:
   void setMouseState(int s);
-  bool visibleChain() const;
   void clearRadioGroup();
 
   ButtonKind kind_ = ButtonKind::Push;

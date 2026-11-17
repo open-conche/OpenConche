@@ -13,6 +13,7 @@ struct Options {
   std::string assetsDir;
   std::string userDir;  // empty = the detected game's default folder
   bool userDirExplicit = false;  // --userdir was given: the switcher keeps it across a game change
+  std::string variantId;  // the library variant the finder / saved choice / switcher booted (empty for a plain --assets run)
   std::string game;  // --game <module id>: skips detection (empty = detect)
   double scale = 1;
   bool fullscreen = false;

@@ -208,7 +208,7 @@ ParseResult parseArgs(const std::vector<std::string>& args) {
   if (r.error.empty() && o.finder && o.noAssets)
     r.error = "--finder conflicts with --no-assets";
   // --import-prefs is a Chocolatier 3 command, so "the default" here is that game's folder.
-  const std::string choc3Default = platform::defaultUserDir(games::findModule("choc3")->profile().userDirName);
+  const std::string choc3Default = platform::defaultGameUserDir(games::findModule("choc3")->profile().userDirName);
   if (r.error.empty() && !o.help && !o.version) {
     const std::string def = choc3Default;
     if (o.importIntoDefault && o.importPrefs.empty()) {
@@ -238,8 +238,12 @@ ParseResult parseArgs(const std::vector<std::string>& args) {
     else {
       r.shortError = false;
       // The default folder of every game: --game or detection may pick any of them.
-      for (const script::GameModule* m : games::modules()) {
-        const std::string d = platform::defaultUserDir(m->profile().userDirName);
+      // Also the shipped-content Chocolatier 3 leaf (Choc3Module::defaultUserLeaf) and the engine's own folder.
+      std::vector<std::string> defaults;
+      for (const script::GameModule* m : games::modules()) defaults.push_back(platform::defaultGameUserDir(m->profile().userDirName));
+      defaults.push_back(platform::defaultGameUserDir("Chocolatier3-Vanilla"));
+      defaults.push_back(platform::defaultUserDir("OpenConche"));
+      for (const std::string& d : defaults) {
         if (d.empty() || !samePath(o.userDir, d)) continue;
         r.shortError = true;
         r.error = "--userdir " + o.userDir + " is the default user folder (" + d +

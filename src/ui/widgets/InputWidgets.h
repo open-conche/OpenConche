@@ -64,6 +64,9 @@ class TextEditWindow : public TextWindow {
   void evaluateKey(int type, int ch, bool accepted) const {
     if (preEdit_) preEdit_(type, ch, accepted);
   }
+  // Replaces the text as a key would have left it: a pending initial text is dropped, the caret goes to the end, then
+  // kTextEditChanged is posted and onkey runs, which native SetLabel does not do.
+  void setTextAsTyped(std::string s);
   // Several characters from one text event.
   bool typeText(std::string_view utf8);
   // The key presses OnKeyDown handles; false when the edit has no use for the key.
@@ -83,6 +86,7 @@ class TextEditWindow : public TextWindow {
   static std::size_t charLengthAt(const std::string& s, std::size_t at);
   static std::size_t prevCharStart(const std::string& s, std::size_t at);
   int codePoints() const;
+  int textLimit() const;
 
   std::string text_;
   std::size_t caret_ = 0;  // byte offset

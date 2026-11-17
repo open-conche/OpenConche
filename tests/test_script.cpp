@@ -17,6 +17,7 @@ struct Recorder : choco::platform::InputInjector {
     return true;
   }
   void injectText(const std::string& t) override { log += "T" + t + ";"; }
+  void injectWheel(float x, float y, int n) override { log += "W" + std::to_string(int(x)) + "," + std::to_string(int(y)) + "," + std::to_string(n) + ";"; }
   void injectQuit() override { log += "Q;"; }
   void injectResize(int w, int h) override { log += "R" + std::to_string(w) + "x" + std::to_string(h) + ";"; }
 };
@@ -225,4 +226,21 @@ TEST_CASE("type and lua commands: the rest of the line is the text; type injects
   ScriptDriver d2(parseScript("lua x = 1\n").commands, r2);
   d2.update(0);
   CHECK(d2.failed());  // no runner: the host is missing
+}
+
+TEST_CASE("script: wheel x y N") {
+  auto p = parseScript("wheel 400 300 3\nwheel 10 20 -2\n");
+  REQUIRE(p.errors.empty());
+  REQUIRE(p.commands.size() == 2);
+  CHECK(p.commands[0].kind == ScriptCommand::Kind::Wheel);
+  CHECK(p.commands[1].count == -2);
+  Recorder rec;
+  ScriptDriver d(p.commands, rec);
+  d.update(0);
+  CHECK(rec.log == "W400,300,3;W10,20,-2;");
+}
+
+TEST_CASE("script: wheel needs a position and a non-zero whole number of notches") {
+  auto p = parseScript("wheel 1 2\nwheel 1 2 0\nwheel 1 2 1.5\nwheel 1 2 3 4\nwheel 1\n");
+  CHECK(p.errors.size() == 5);
 }

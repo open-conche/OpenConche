@@ -62,6 +62,15 @@ one-pixel lighter border:
   hovered, the screen's one tooltip), a 128x32 **Play** button on the right, and a small X (22x22, inverted fill on
   hover) that unregisters the game. The X only erases the games.cfg entry (and clears `last` if it named that game);
   it never changes the disk. The list is rebuilt in place.
+- A game with an enhancements overlay (`FinderVariant::enhancements`: every game but the Great Chocolate Chase)
+  has an **Enhancements** checkbox under the directory line, at x=84, y = card + 46 (`finderCardRects`; 130x14, left
+  of Play). The built-in font has no brackets, so the box is rects: a 10-pixel square with a one-pixel edge and a
+  gold centre when on, the word beside it in 10pt dim. Hover turns the edge gold and the word bright and shows
+  "Mouse wheel scrolling and other conveniences the original did not have. Off plays exactly like the original." in
+  the footer. A click flips the entry's switch and saves `games.cfg` at once; it neither launches the game nor
+  touches `last`. If the file cannot be saved, the toggle is put back and a warning says so. In the in-game switcher
+  the same checkbox works, but for the game that is running the overlay was fixed when it booted, so its footer
+  reads that the setting takes effect the next time the game starts.
 - Play is gold when the entry still validates (`bootFromLibrary`): the click boots it, no dialog. A white Play whose
   entry went stale asks, through the folder dialog, where the game went (the re-locate flow). Hovered words are
   underlined with the layout engine's own `<u>` markup.
@@ -159,8 +168,8 @@ leaks across games). `userDir` is reset so the next game resolves its own defaul
 
 The engine's preference folder is `platform::defaultUserDir("OpenConche")`: the same three locations SDL's
 `SDL_GetPrefPath` would pick (%APPDATA%, .local/share, ~/Library/Application Support). The one-level helper is kept
-because SDL's (org, app) pair would add a nesting level, and the per-game user folders (`Chocolatier3` and friends,
-named after the games so existing profiles stay found) already use it.
+because SDL's (org, app) pair would add a nesting level, and the per-game user folders (`Chocolatier3` and friends)
+are subfolders of it (`platform::defaultGameUserDir`).
 
 `games.cfg` is a library, not a last pick: one `last = <variant>` line naming the game to boot, and a `dir`/`assets`
 pair per game the finder has validated.
@@ -171,7 +180,12 @@ choc1.dir = /Applications/Chocolatier          <- what the folder picker returne
 choc1.assets = .../Chocolatier/assets          <- the tree the engine resolved from it
 choc3.dir = ...                                 <- every registered game stays
 choc3.assets = ...
+choc3.enhancements = 0                          <- only when off; missing = on (docs/design/enhancements.md)
 ```
+
+`enhancements` is the per-game switch of the optional conveniences the originals never had; an entry with no such
+line is on, only an off value is written, re-locating or re-adding a game keeps it and removing the game drops it. A
+line for a game with no `dir`/`assets` is ignored.
 
 `dir` is saved so a moved install is re-resolved (candidates again) on the next launch; `assets` is the direct
 fallback. A stale `last` entry (folder gone, re-resolution unplayable) is ignored and the launcher is shown, which

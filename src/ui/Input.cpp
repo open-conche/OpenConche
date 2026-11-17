@@ -162,7 +162,51 @@ void WindowManager::handleInput(const InputEvent& ev) {
   if (inputFilter_ && inputFilter_(ev)) return;
   if (ev.type == InputEvent::Type::Key) routeKey(ev);
   else if (ev.type == InputEvent::Type::Text) routeText(ev);
+  else if (ev.type == InputEvent::Type::Wheel) routeWheel(ev);
   else routeMouse(ev);
+}
+
+namespace {
+
+// Appends the shown windows under (px, py) (in w's own coordinates): children first, front to back, then w itself.
+void collectUnder(Window& w, int px, int py, std::vector<Window*>& out) {
+  for (const auto& c : w.children()) {
+    if (!c->shown() || !contains(*c, px, py)) continue;
+    collectUnder(*c, px - c->rect().x, py - c->rect().y, out);
+  }
+  out.push_back(&w);
+}
+
+ButtonWindow* findPressable(Window& w, const std::string& name) {
+  if (auto* b = dynamic_cast<ButtonWindow*>(&w); b && b->name() == name && b->visibleChain()) return b;
+  for (const auto& c : w.children())
+    if (ButtonWindow* b = findPressable(*c, name)) return b;
+  return nullptr;
+}
+
+}  // namespace
+
+ButtonWindow* WindowManager::findPressableButton(const std::string& name) const {
+  return name.empty() ? nullptr : findPressable(*modals_.back(), name);
+}
+
+bool WindowManager::pressButtonNamed(const std::string& name) {
+  ButtonWindow* b = findPressableButton(name);
+  if (!b) return false;
+  b->press();
+  return true;
+}
+
+// The wheel is not a window message: with no hook it is dropped; captured listeners, hover and focus are not touched.
+void WindowManager::routeWheel(const InputEvent& ev) {
+  if (!wheelHook_ || !ev.inArea || ev.wheel == 0) return;
+  Window* top = modals_.back().get();
+  const gfx::PointF o = screenOrigin(*top);
+  const int px = static_cast<int>(std::floor(ev.x)) - static_cast<int>(o.x);
+  const int py = static_cast<int>(std::floor(ev.y)) - static_cast<int>(o.y);
+  std::vector<Window*> under;
+  collectUnder(*top, px, py, under);  // like routeMouse: the modal's own rect does not bound its children
+  wheelHook_(under, ev.wheel);
 }
 
 void WindowManager::routeMouse(const InputEvent& ev) {

@@ -39,7 +39,7 @@ class Choc3Module : public script::GameModule {
   // Chocolatier 3 has two incompatible content sets: the community (Reforged) tree extends vanilla's ingredient code
   // tables (100 against 60 codes), so a player made with one crashes the shipped Lua under the other - sim/recipe.lua:23
   // dies on the first ingredient code the loaded table does not know (a custom product designed in the community tree).
-  // The community tree keeps the historical "Chocolatier3" default (its existing players stay found); the shipped
+  // The community tree keeps the "Chocolatier3" leaf; the shipped
   // content gets a leaf of its own, so the two never share a player store again. --userdir still overrides both.
   // The marker is the community store's first file (the vanilla trees have no community/ at all).
   std::string defaultUserLeaf(const assets::AssetFS& fs) const override {

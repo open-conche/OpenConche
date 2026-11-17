@@ -84,7 +84,7 @@ std::string backUpUserDir(const std::string& userDir, std::chrono::system_clock:
 }
 
 int runImportPrefs(const Options& o) {
-  const std::string userDir = o.userDir.empty() ? platform::defaultUserDir(games::choc3::module().profile().userDirName) : o.userDir;
+  const std::string userDir = o.userDir.empty() ? platform::defaultGameUserDir(games::choc3::module().profile().userDirName) : o.userDir;
 
   // Read the source first, read-only and whole, so a bad file stops here with nothing backed up or written.
   const fs::path srcPath = platform::pathFromUtf8(o.importPrefs);

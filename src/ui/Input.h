@@ -13,10 +13,11 @@ struct KeyEvent {
 // One input event from the platform layer, already in logical (800x600) coordinates. `inArea` is false when the
 // pointer is in the letterbox bars. Only the left button (1; 0 counts too) acts as a click.
 struct InputEvent {
-  enum class Type { MouseMove, MouseDown, MouseUp, Key, Text } type = Type::MouseMove;
+  enum class Type { MouseMove, MouseDown, MouseUp, Key, Text, Wheel } type = Type::MouseMove;
   float x = 0, y = 0;
   bool inArea = true;
   int button = 1;
+  int wheel = 0;  // Type::Wheel: whole notches, positive away from the user (up)
   KeyEvent key;
   std::string text;  // Type::Text: the UTF-8 text the platform's text input produced
 };

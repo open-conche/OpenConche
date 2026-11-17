@@ -47,6 +47,20 @@ std::string defaultUserDir(const std::string& leaf) {
 #endif
 }
 
+std::string defaultGameUserDir(const std::string& leaf) {
+  const std::string root = defaultUserDir("OpenConche");
+  if (root.empty()) return {};
+  std::string name = leaf;
+#if !defined(_WIN32) && !defined(__APPLE__)
+  for (char& c : name) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+#endif
+#ifdef _WIN32
+  return root + "\\" + name;
+#else
+  return root + "/" + name;
+#endif
+}
+
 }  // namespace choco::platform
 
 namespace choco::platform {

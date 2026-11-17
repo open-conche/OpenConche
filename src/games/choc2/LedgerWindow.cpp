@@ -39,6 +39,20 @@ double numberFromTable(lua_State* L, int table, const char* key, double def) {
   return v;
 }
 
+// Whether the enhancement overlay asks for the finer count-up (Enhance.smoothMoney; docs/design/enhancements.md section 5).
+bool overlaySmoothMoney(lua_State* L) {
+  const int top = lua_gettop(L);
+  lua_getglobal(L, "Enhance");
+  bool on = false;
+  if (lua_istable(L, -1)) {
+    lua_pushstring(L, "smoothMoney");
+    lua_gettable(L, -2);
+    on = lua_toboolean(L, -1) != 0;
+  }
+  lua_settop(L, top);
+  return on;
+}
+
 }  // namespace
 
 Ledger* Ledger::current(ui::WindowManager& wm) {
@@ -60,13 +74,14 @@ void Ledger::init(const ui::Style& style) {
   Window::init(style);
   showQuestY_ = static_cast<int>(style.numberOr("showQuestY", 0));
   hideQuestY_ = static_cast<int>(style.numberOr("hideQuestY", 53));
+  smoothMoney_ = overlaySmoothMoney(ctx_.lua.L());
   if (auto data = style.table("data")) {
     // The first ledger starts at the build-time amount. One built over another continues the shared count (the original's
     // Init calls UpdateBadge, which only sets a new target).
     const double money = std::max(0.0, std::trunc(data->numberOr("money", 0)));
     bool others = false;
     for (Ledger* l : all(manager())) others = others || l != this;
-    if (others) shared().money.setTargetChoc2(money);
+    if (others) setMoneyTarget(money);
     else shared().money.snap(money);
     rank_ = data->numberOr("rank", 0);
     weeks_ = data->numberOr("weeks", 0);
@@ -92,7 +107,7 @@ void Ledger::postChildrenInit(const ui::Style& style) {
   if (questY() == Session::kQuestUnset) questY() = hideQuestY_;
   placeQuest();
   writeBadgeTexts();
-  manager().startWindowAnimation(id(), kTickMs);
+  manager().startWindowAnimation(id(), smoothMoney_ ? kSmoothTickMs : kTickMs);
 }
 
 bool Ledger::onAnimate() {
@@ -103,7 +118,9 @@ bool Ledger::onAnimate() {
   if (s.lastTickMs != now) {
     s.lastTickMs = now;
     const int before = questY();
-    stepQuest();
+    // The quest bar keeps its 100 ms step: with the finer money tick it moves on every second one.
+    s.halfTick = smoothMoney_ && !s.halfTick;
+    if (!s.halfTick) stepQuest();
     const bool moved = s.money.step();
     if (moved || questY() != before) syncViews();
   }
@@ -249,12 +266,17 @@ void Ledger::updateBadge(lua_State* L, int index) {
   if (!lua_istable(L, index)) return;
   // Unsigned in the binary: a negative amount is 0. Missing keys keep the stored values.
   // Shared: the first ledger sets the target, the others find it already set.
-  shared().money.setTargetChoc2(numberFromTable(L, index, "money", counter().target));
+  setMoneyTarget(numberFromTable(L, index, "money", counter().target));
   rank_ = numberFromTable(L, index, "rank", rank_);
   weeks_ = numberFromTable(L, index, "weeks", weeks_);
   days_ = numberFromTable(L, index, "days", days_);
   score_ = numberFromTable(L, index, "score", score_);
   writeBadgeTexts();
+}
+
+void Ledger::setMoneyTarget(double amount) {
+  if (smoothMoney_) shared().money.setTargetSteps(std::clamp(amount, 0.0, 4294967295.0), kSmoothSteps);
+  else shared().money.setTargetChoc2(amount);
 }
 
 void Ledger::setQuestHint(const std::string& hint) {

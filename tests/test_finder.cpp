@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <sstream>
 #include <string>
 
 #include "app/Args.h"
@@ -20,6 +21,15 @@ using namespace choco::app;
 namespace fs = std::filesystem;
 
 namespace {
+
+// An entry with its dir and assets set (all three members named, so no missing-field warning on any compiler).
+FinderGameEntry entryOf(const std::string& dir, const std::string& assets, bool enhancements = true) {
+  FinderGameEntry e;
+  e.dir = dir;
+  e.assets = assets;
+  e.enhancements = enhancements;
+  return e;
+}
 
 // A throwaway tree under the test output folder.
 std::string tempRoot(const std::string& name) {
@@ -265,8 +275,8 @@ TEST_CASE("bootFromLibrary: the switcher's click-to-boot and the re-pick fallbac
   REQUIRE(vr);
   // A valid entry boots: the switcher's one-click play.
   GameLibrary library;
-  library.entries[v3->id] = {std::string("/no/such/install-anymore"), vanilla};  // dir moved, assets path holds
-  library.entries[vr->id] = {"/no/such", "/no/such/assets"};
+  library.entries[v3->id] = entryOf("/no/such/install-anymore", vanilla);  // dir moved, assets path holds
+  library.entries[vr->id] = entryOf("/no/such", "/no/such/assets");
   // The options a person passed on the command line survive the boot: only the game changes (the Play click
   // once replaced the whole struct).
   Options o;
@@ -280,6 +290,7 @@ TEST_CASE("bootFromLibrary: the switcher's click-to-boot and the re-pick fallbac
   CHECK(bootFromLibrary(*v3, library, o, why));
   CHECK(o.assetsDir == vanilla);
   CHECK(o.game == "choc3");
+  CHECK(o.variantId == "choc3");
   CHECK(why.empty());
   CHECK(o.scale == 2);
   CHECK(o.fullscreen);
@@ -306,8 +317,8 @@ TEST_CASE("the game library: save, load, every game kept, and a moved install") 
   CHECK(library.last.empty());
   CHECK(library.entries.empty());
   library.last = "choc3";
-  library.entries["choc3"] = {vanilla, vanilla};
-  library.entries["choc3-reforged"] = {reforged, reforged};  // both games stay: it is a library, not a last pick
+  library.entries["choc3"] = entryOf(vanilla, vanilla);
+  library.entries["choc3-reforged"] = entryOf(reforged, reforged);  // both games stay: it is a library, not a last pick
   CHECK(saveGameLibrary(library, error));
   CHECK(error.empty());
   GameLibrary loaded;
@@ -445,7 +456,7 @@ TEST_CASE("the game library: fixbugs is kept by a rewrite, a missing line is on"
   // What the finder does after a pick or an X click: change the entries and save. The switch survives.
   loaded.entries.erase("choc1");
   loaded.last.clear();
-  loaded.entries["choc2"] = {"/g/c2", "/g/c2/assets"};
+  loaded.entries["choc2"] = entryOf("/g/c2", "/g/c2/assets");
   REQUIRE(saveGameLibrary(loaded, error));
   GameLibrary again;
   REQUIRE(loadGameLibrary(again, error));
@@ -457,6 +468,121 @@ TEST_CASE("the game library: fixbugs is kept by a rewrite, a missing line is on"
   GameLibrary on;
   REQUIRE(loadGameLibrary(on, error));
   CHECK(on.fixBugs);
+}
+
+TEST_CASE("the game library: enhancements round trip, add, re-locate and remove") {
+  const std::string home = tempRoot("library-enhancements");
+  const SavedHome restore(home);
+  GameLibrary lib;
+  std::string error;
+  REQUIRE(loadGameLibrary(lib, error));
+  std::error_code ec;
+  fs::create_directories(platform::pathFromUtf8(lib.path).parent_path(), ec);
+  {
+    std::ofstream out(platform::pathFromUtf8(lib.path), std::ios::binary | std::ios::trunc);
+    out << "last = choc1\nchoc1.dir = /g/c1\nchoc1.assets = /g/c1/assets\nchoc1.enhancements = 0\n"
+           "choc2.dir = /g/c2\nchoc2.assets = /g/c2/assets\nchoc3.dir = /g/c3\nchoc3.assets = /g/c3/a\n"
+           "choc3.enhancements = 1\ngreatcc.enhancements = 0\n";
+  }
+  GameLibrary loaded;
+  REQUIRE(loadGameLibrary(loaded, error));
+  CHECK_FALSE(loaded.entries["choc1"].enhancements);
+  CHECK(loaded.entries["choc2"].enhancements);  // missing = on
+  CHECK(loaded.entries["choc3"].enhancements);  // `1` = on
+  CHECK(loaded.entries.count("greatcc") == 0);  // a lone switch line is no game
+  // Which variant a booted folder is, and the switch for it; a folder the library does not hold is on.
+  CHECK(variantForAssets(loaded, "/g/c1/assets") == findFinderVariant("choc1"));
+  CHECK(variantForAssets(loaded, "/elsewhere") == nullptr);
+  CHECK_FALSE(enhancementsForAssets(loaded, "/g/c1/assets"));
+  CHECK(enhancementsForAssets(loaded, "/g/c2/assets"));
+  CHECK(enhancementsForAssets(loaded, "/elsewhere"));
+  CHECK(enhancementsForAssets(loaded, ""));
+  // By variant id: the booted run carries it, and the entry's own switch is read whatever folder booted.
+  Options byId;
+  byId.assetsDir = "/moved/install/assets";  // the saved `assets` no longer matches
+  byId.variantId = "choc1";
+  CHECK_FALSE(enhancementsForRun(loaded, byId));
+  byId.variantId = "choc2";
+  CHECK(enhancementsForRun(loaded, byId));
+  byId.variantId = "greatcc";  // no entry: on
+  CHECK(enhancementsForRun(loaded, byId));
+  Options plain;  // a plain --assets run: by folder
+  plain.assetsDir = "/g/c1/assets";
+  CHECK_FALSE(enhancementsForRun(loaded, plain));
+  plain.assetsDir = "/elsewhere";
+  CHECK(enhancementsForRun(loaded, plain));
+  // Two variants that resolve to one folder read their own switches.
+  loaded.entries["choc3"] = entryOf("/g/shared", "/g/shared/assets", true);
+  loaded.entries["choc3-reforged"] = entryOf("/g/shared", "/g/shared/assets", false);
+  Options shared;
+  shared.assetsDir = "/g/shared/assets";
+  shared.variantId = "choc3";
+  CHECK(enhancementsForRun(loaded, shared));
+  shared.variantId = "choc3-reforged";
+  CHECK_FALSE(enhancementsForRun(loaded, shared));
+  // Only off is written.
+  REQUIRE(saveGameLibrary(loaded, error));
+  {
+    std::ifstream in(platform::pathFromUtf8(loaded.path), std::ios::binary);
+    std::stringstream ss;
+    ss << in.rdbuf();
+    const std::string text = ss.str();
+    CHECK(text.find("choc1.enhancements = 0") != std::string::npos);
+    CHECK(text.find("choc2.enhancements") == std::string::npos);
+    CHECK(text.find("choc3.enhancements") == std::string::npos);
+  }
+  GameLibrary again;
+  REQUIRE(loadGameLibrary(again, error));
+  CHECK_FALSE(again.entries["choc1"].enhancements);
+  CHECK(again.entries["choc2"].enhancements);
+  // Re-locating (the finder's save path) and adding another game keep the switch; removing drops it.
+  again.entries["choc1"].dir = "/moved";
+  again.entries["choc1"].assets = "/moved/assets";
+  again.entries["choc2"].enhancements = false;
+  REQUIRE(saveGameLibrary(again, error));
+  GameLibrary moved;
+  REQUIRE(loadGameLibrary(moved, error));
+  CHECK_FALSE(moved.entries["choc1"].enhancements);
+  CHECK(moved.entries["choc1"].dir == "/moved");
+  CHECK_FALSE(moved.entries["choc2"].enhancements);
+  moved.entries.erase("choc1");
+  moved.last.clear();
+  REQUIRE(saveGameLibrary(moved, error));
+  GameLibrary gone;
+  REQUIRE(loadGameLibrary(gone, error));
+  CHECK(gone.entries.count("choc1") == 0);
+  gone.entries["choc1"] = {};
+  gone.entries["choc1"].dir = "/new";
+  gone.entries["choc1"].assets = "/new/assets";
+  CHECK(gone.entries["choc1"].enhancements);  // a re-added game starts on
+}
+
+TEST_CASE("the finder cards: the Enhancements checkbox clears the other controls at every card count") {
+  const auto intersects = [](const choco::gfx::RectI& a, const choco::gfx::RectI& b) {
+    return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+  };
+  const auto inside = [](const choco::gfx::RectI& in, const choco::gfx::RectI& out) {
+    return in.x >= out.x && in.y >= out.y && in.x + in.w <= out.x + out.w && in.y + in.h <= out.y + out.h;
+  };
+  choco::gfx::text::TextStyle st;
+  st.font = choco::gfx::text::builtinFont();
+  st.size = choco::app::kFinderEnhancementsSize;
+  const auto label = choco::gfx::text::TextLayout::build(choco::app::kFinderEnhancementsLabel, st, 4000, 40);
+  for (int slot = 0; slot < 5; ++slot) {
+    const choco::app::FinderCardRects r = choco::app::finderCardRects(slot);
+    CAPTURE(slot);
+    CHECK(inside(r.check, r.card));
+    CHECK_FALSE(intersects(r.check, r.button));
+    CHECK_FALSE(intersects(r.check, r.cross));
+    // The name (16pt, 18 high at card.y+6, from x=84) and directory (12 high at card.y+28) lines.
+    CHECK_FALSE(intersects(r.check, {84, r.card.y + 6, 480, 18}));
+    CHECK_FALSE(intersects(r.check, {84, r.card.y + 28, 480, 12}));
+    // The box and the label fit the hit area.
+    CHECK(choco::app::kFinderBoxSize + choco::app::kFinderBoxGap + label.bounds().w <= r.check.w);
+    if (slot > 0) CHECK_FALSE(intersects(r.check, choco::app::finderCardRects(slot - 1).card));
+  }
+  CHECK(choco::app::findFinderVariant("choc3-reforged")->enhancements);
+  CHECK_FALSE(choco::app::findFinderVariant("greatcc")->enhancements);
 }
 
 }  // TEST_SUITE

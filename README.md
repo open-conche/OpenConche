@@ -112,6 +112,17 @@ Then double-click `OpenConche.app`.
 On Linux, the folder dialog needs the desktop portal or `zenity` (Ubuntu:
 `sudo apt install zenity`).
 
+**Enhancements.** Each game card in the launcher has an **Enhancements**
+checkbox (on by default, remembered per game). With it ticked, the mouse wheel
+(or trackpad) works where the original games only had arrow buttons: it scrolls
+the ledger messages and inventory in Chocolatier 1 and 2, and the quest log in
+Chocolatier 3 and Reforged, and over a quantity field or the buy/sell number pad
+it adjusts the amount. In Chocolatier 1 the trade screen's OK button also
+commits pending quantities, and in Chocolatier 2 the money counts up in small
+quick steps instead of a few large ones. Untick the box to get the original behaviour. The
+game scripts themselves are untouched; the enhancements are small overlays the
+engine loads on top. See [docs/design/enhancements.md](docs/design/enhancements.md).
+
 Each game keeps its own players and saves, separate from the original game's.
 Chocolatier 3 and Chocolatier 3 Reforged have different content, so a player
 created in one won't appear in the other.

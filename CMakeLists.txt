@@ -17,7 +17,7 @@ if(CHOCO_RELEASE)
   set(SDL_FORCE_STATIC_VCRT ON CACHE BOOL "" FORCE)
 endif()
 
-project(chocolatier_engine VERSION 1.1 LANGUAGES C CXX)
+project(chocolatier_engine VERSION 1.2 LANGUAGES C CXX)
 
 # Visual Studio generators compile one file at a time per project unless /MP is set (/m only parallelises across projects).
 if(MSVC)
@@ -162,8 +162,13 @@ add_custom_command(
   OUTPUT "${EMBEDDED_LUA_CPP}"
   COMMAND ${CMAKE_COMMAND} -DOUT=${EMBEDDED_LUA_CPP} -DPRELUDE=${CMAKE_CURRENT_SOURCE_DIR}/lua/prelude.lua
           -DHOST=${CMAKE_CURRENT_SOURCE_DIR}/lua/host.lua
-          -DANIMSCRIPT=${CMAKE_CURRENT_SOURCE_DIR}/lua/animationscript.lua -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/EmbedLua.cmake
-  DEPENDS lua/prelude.lua lua/host.lua lua/animationscript.lua cmake/EmbedLua.cmake
+          -DANIMSCRIPT=${CMAKE_CURRENT_SOURCE_DIR}/lua/animationscript.lua
+          -DENHANCE=${CMAKE_CURRENT_SOURCE_DIR}/lua/enhance.lua
+          -DENHANCE_CHOC1=${CMAKE_CURRENT_SOURCE_DIR}/lua/enhance_choc1.lua
+          -DENHANCE_CHOC2=${CMAKE_CURRENT_SOURCE_DIR}/lua/enhance_choc2.lua
+          -DENHANCE_CHOC3=${CMAKE_CURRENT_SOURCE_DIR}/lua/enhance_choc3.lua -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/EmbedLua.cmake
+  DEPENDS lua/prelude.lua lua/host.lua lua/animationscript.lua lua/enhance.lua lua/enhance_choc1.lua
+          lua/enhance_choc2.lua lua/enhance_choc3.lua cmake/EmbedLua.cmake
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   COMMENT "Embedding prelude.lua and host.lua")
 
@@ -195,6 +200,7 @@ set(CHOCO_ENGINE_SOURCES
   src/script/Bind.cpp
   src/script/ContentNatives.cpp
   src/script/CoreNatives.cpp
+  src/script/Enhancements.cpp
   src/script/Formats.cpp
   src/script/Loaders.cpp
   src/script/LuaState.cpp
@@ -391,6 +397,13 @@ if(CHOCO_VANILLA_ROOT AND EXISTS "${CHOCO_VANILLA_ROOT}/assets/assets.pfp")
               --assets ${CHOCO_VANILLA_ROOT}/assets
               --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/vanilla_hiscore
               --dataset vanilla)
+    add_test(NAME vanilla_enhance
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_choc3_enhance.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_VANILLA_ROOT}/assets
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/vanilla_enhance
+              --dataset vanilla)
+    set_tests_properties(vanilla_enhance PROPERTIES TIMEOUT 600)
     foreach(scenario factory endtoend)
       add_test(NAME vanilla_${scenario}
         COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_vanilla_endtoend.py
@@ -411,7 +424,7 @@ if(CHOCO_VANILLA_ROOT AND EXISTS "${CHOCO_VANILLA_ROOT}/assets/assets.pfp")
               --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/vanilla_credits --case credits --twocol)
   endif()
 endif()
-add_executable(engine_tests tests/test_main.cpp tests/test_args.cpp tests/test_assets.cpp tests/test_display.cpp tests/test_script.cpp tests/test_bind.cpp tests/test_host.cpp tests/test_gfx.cpp tests/test_ui.cpp tests/test_buttons.cpp tests/test_layout_draw.cpp tests/test_text.cpp tests/test_textwidgets.cpp tests/test_transitions.cpp tests/test_inputwidgets.cpp tests/test_users.cpp tests/test_curve.cpp tests/test_sheets.cpp tests/test_sprite.cpp tests/test_port.cpp tests/test_ledger.cpp tests/test_map.cpp tests/test_crates.cpp tests/test_factory.cpp tests/test_stubs.cpp tests/test_recipe_designer.cpp tests/test_pfp.cpp tests/test_hiscore.cpp tests/test_credits.cpp tests/test_particles.cpp tests/test_utf8_paths.cpp tests/test_cad.cpp tests/test_audio.cpp tests/test_audio_wiring.cpp tests/test_cadilite.cpp tests/test_prefs_import.cpp tests/test_boot_trace.cpp tests/test_calendar.cpp tests/test_finder.cpp
+add_executable(engine_tests tests/test_main.cpp tests/test_args.cpp tests/test_assets.cpp tests/test_display.cpp tests/test_script.cpp tests/test_bind.cpp tests/test_host.cpp tests/test_gfx.cpp tests/test_ui.cpp tests/test_buttons.cpp tests/test_layout_draw.cpp tests/test_text.cpp tests/test_textwidgets.cpp tests/test_transitions.cpp tests/test_inputwidgets.cpp tests/test_users.cpp tests/test_curve.cpp tests/test_sheets.cpp tests/test_sprite.cpp tests/test_port.cpp tests/test_ledger.cpp tests/test_map.cpp tests/test_crates.cpp tests/test_factory.cpp tests/test_stubs.cpp tests/test_recipe_designer.cpp tests/test_pfp.cpp tests/test_hiscore.cpp tests/test_credits.cpp tests/test_particles.cpp tests/test_utf8_paths.cpp tests/test_cad.cpp tests/test_audio.cpp tests/test_audio_wiring.cpp tests/test_cadilite.cpp tests/test_prefs_import.cpp tests/test_boot_trace.cpp tests/test_calendar.cpp tests/test_finder.cpp tests/test_enhance.cpp
   ${CHOCO_GAME_TESTS})
 target_link_libraries(engine_tests PRIVATE choco_core doctest::doctest)
 target_include_directories(engine_tests SYSTEM PRIVATE "${lua502_SOURCE_DIR}/src")
@@ -521,6 +534,12 @@ if(Python3_Interpreter_FOUND)
               --openconche $<TARGET_FILE:openconche>
               --assets ${CHOCO_CHOC2_ASSETS}
               --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/choc2_trade)
+    add_test(NAME choc2_enhance
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_choc2_enhance.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_CHOC2_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/choc2_enhance)
+    set_tests_properties(choc2_enhance PROPERTIES TIMEOUT 600)
     add_test(NAME choc2_enter
       COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_choc2_enter.py
               --openconche $<TARGET_FILE:openconche>
@@ -559,6 +578,11 @@ if(Python3_Interpreter_FOUND)
               --openconche $<TARGET_FILE:openconche>
               --assets ${CHOCO_CHOC1_ASSETS}
               --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/choc1_finale)
+    add_test(NAME choc1_enhance
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_choc1_enhance.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CHOCO_CHOC1_ASSETS}
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/choc1_enhance)
     set_tests_properties(choc1_dice PROPERTIES TIMEOUT 600)
   endif()
   # The Great Chocolate Chase (docs/design/greatcc.md section 6): the Windows install (assets.pfp) and the Mac bundle's loose
@@ -888,6 +912,13 @@ if(Python3_Interpreter_FOUND)
               --assets ${CMAKE_CURRENT_SOURCE_DIR}/Chocolatier-Decadence-Reforged/assets
               --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/endtoend
               --displays scale1,fullscreen)
+    add_test(NAME reforged_enhance
+      COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_choc3_enhance.py
+              --openconche $<TARGET_FILE:openconche>
+              --assets ${CMAKE_CURRENT_SOURCE_DIR}/Chocolatier-Decadence-Reforged/assets
+              --workdir ${CMAKE_CURRENT_BINARY_DIR}/test_out/reforged_enhance
+              --dataset reforged)
+    set_tests_properties(reforged_enhance PROPERTIES TIMEOUT 600)
     add_test(NAME reforged_crates
       COMMAND ${Python3_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_crates.py
               --openconche $<TARGET_FILE:openconche>

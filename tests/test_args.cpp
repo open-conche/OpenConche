@@ -44,7 +44,7 @@ TEST_CASE("automated runs need a non-default --userdir") {
     CHECK_FALSE(r.ok());
     CHECK(r.shortError);
     CHECK(r.error.find("--userdir <scratch dir>") != std::string::npos);
-    CHECK(r.error.find(choco::platform::defaultUserDir("Chocolatier3")) != std::string::npos);
+    CHECK(r.error.find(choco::platform::defaultGameUserDir("Chocolatier3")) != std::string::npos);
   }
   for (std::vector<std::string> a : {std::vector<std::string>{"--script", "s"}, {"--frames", "3"},
                                      {"--screenshot", "o.png"}, {"--log-unimplemented", "l"}})
@@ -53,11 +53,11 @@ TEST_CASE("automated runs need a non-default --userdir") {
   CHECK(parseArgs({"--headless", "--help"}).ok());
   CHECK(parseArgs({"--headless", "--version"}).ok());  // like --help: exits before anything is written
   CHECK(parseArgs({"--run", "r.lua"}).ok());  // human play-testing keeps the default profile
-  auto d = parseArgs({"--headless", "--userdir", choco::platform::defaultUserDir("Chocolatier3")});
+  auto d = parseArgs({"--headless", "--userdir", choco::platform::defaultGameUserDir("Chocolatier3")});
   CHECK_FALSE(d.ok());
   CHECK(d.error.find("default user folder") != std::string::npos);
   CHECK(parseArgs({}).ok());  // a human windowed run keeps the default
-  CHECK(parseArgs({"--userdir", choco::platform::defaultUserDir("Chocolatier3")}).ok());
+  CHECK(parseArgs({"--userdir", choco::platform::defaultGameUserDir("Chocolatier3")}).ok());
   CHECK(parseArgs({"--fullscreen", "--scale", "2"}).ok());
 }
 
@@ -199,12 +199,12 @@ TEST_CASE("--game picks a game; the other games' default user folders are refuse
   leaves.push_back("Chocolatier1");
 #endif
   for (const char* leaf : leaves) {
-    const std::string d = choco::platform::defaultUserDir(leaf);
+    const std::string d = choco::platform::defaultGameUserDir(leaf);
     if (d.empty()) continue;
     CHECK_FALSE(parseArgs({"--headless", "--userdir", d}).ok());
     CHECK(parseArgs({"--userdir", d}).ok());  // a human windowed run may use it
   }
-  CHECK(choco::platform::defaultUserDir("Chocolatier2") != choco::platform::defaultUserDir("Chocolatier3"));
+  CHECK(choco::platform::defaultGameUserDir("Chocolatier2") != choco::platform::defaultGameUserDir("Chocolatier3"));
 }
 
 TEST_CASE("--version names the engine and the build's version") {

@@ -98,13 +98,22 @@ bool TextEditWindow::keyHit(KeyHitType type, std::string_view ch) {
   bool accepted = false;
   switch (type) {
     case kInsert:
-      accepted = !(widthLimited_ && rect().w - layout().bounds().w < 20) && (utf8_ || maxLen_ > static_cast<int>(text_.size()) + 1);
+      accepted = !(widthLimited_ && rect().w - layout().bounds().w < 20) && (utf8_ || textLimit() > static_cast<int>(text_.size()));
       break;
     case kEdit: accepted = true; break;
     case kReject: accepted = false; break;
   }
   if (preEdit_) preEdit_(static_cast<int>(type), ch.empty() ? 0 : static_cast<unsigned char>(ch[0]), accepted);
   return accepted;
+}
+
+// How many characters a non-UTF-8 field holds: `length - 1` as the original, unless the enhancement hook widens it.
+int TextEditWindow::textLimit() const {
+  if (const auto& hook = manager().textLimitHook()) {
+    const int n = hook(name(), maxLen_, ignore_);
+    if (n >= 1) return n;
+  }
+  return maxLen_ - 1;
 }
 
 void TextEditWindow::testEnable(int delta) {
@@ -162,6 +171,13 @@ bool TextEditWindow::typeCharacter(std::string_view ch) {
   }
   if (ok) notifyChanged();
   return ok;
+}
+
+void TextEditWindow::setTextAsTyped(std::string s) {
+  cleared_ = true;
+  setText(std::move(s));
+  notifyChanged();
+  callOnKey();
 }
 
 bool TextEditWindow::typeText(std::string_view s) {

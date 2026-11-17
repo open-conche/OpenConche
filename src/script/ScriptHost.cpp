@@ -1,3 +1,4 @@
+#include "script/Enhancements.h"
 #include "script/ScriptHost.h"
 #include "sdk/Users.h"
 
@@ -104,6 +105,7 @@ ScriptHost::~ScriptHost() {
   hosts.erase(std::remove(hosts.begin(), hosts.end(), this), hosts.end());
   if (hosts.empty())
     lua_resumeerrorhook = nullptr;
+  shutdownEnhancements(ctx_);
   ctx_.wm.setScriptSink(nullptr);
   thread_.reset();
   co_ = nullptr;
@@ -173,6 +175,8 @@ bool ScriptHost::boot() {
       return false;
     }
   }
+  // The enhancement overlay (switch on only): right after host.lua, before the game's entry script.
+  bootEnhancements(ctx_);
 
   // Step 6: constants and settings.xml.
   for (const auto &kv : assets::loadSettings(ctx_.fs))

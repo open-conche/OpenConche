@@ -43,6 +43,7 @@ struct InputEvent {
     MouseDown,
     MouseUp,
     Key,
+    Wheel,              // x, y the pointer (logical), wheel the notches (positive = away from the user), inArea as for a click
     Text,               // key holds the typed UTF-8 text
     FullscreenChanged,  // fullscreen holds the new state; x, y the output size if known (headless), else 0
     RenderReset,        // key holds "targets" or "device"
@@ -54,6 +55,7 @@ struct InputEvent {
   float x = 0, y = 0;
   bool inArea = true;
   int button = 0;
+  int wheel = 0;  // Wheel: whole notches, positive up
   std::string key;  // SDL key name for Key events
   bool repeat = false;  // Key: an OS auto-repeat of a held key
   bool fullscreen = false;
@@ -74,6 +76,8 @@ class InputInjector {
   virtual bool injectKey(const std::string& spec) = 0;
   // Typed text as the OS text input would deliver it (UTF-8). A printable key from injectKey also types its character.
   virtual void injectText(const std::string& utf8) { (void)utf8; }
+  // A mouse wheel turn of `notches` (signed, positive up) with the pointer at the logical position. Default: ignored.
+  virtual void injectWheel(float lx, float ly, int notches) { (void)lx; (void)ly; (void)notches; }
   virtual void injectQuit() = 0;
   // The OS telling the app it lost (false) or regained (true) the foreground. Default: ignored.
   virtual void injectForeground(bool fg) { (void)fg; }
@@ -165,6 +169,7 @@ class Window : public InputInjector {
 
   void injectMouseMove(float lx, float ly) override;
   void injectMouseButton(float lx, float ly, bool down) override;
+  void injectWheel(float lx, float ly, int notches) override;
   void injectWindowMouseMove(float wx, float wy) override;
   void injectWindowMouseButton(float wx, float wy, bool down) override;
   bool injectKey(const std::string& spec) override;

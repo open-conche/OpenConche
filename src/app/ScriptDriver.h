@@ -13,6 +13,7 @@ struct ScriptCommand {
   enum class Kind {
     Click, Move, Down, Up,                        // logical coordinates
     ClickWindow, MoveWindow, DownWindow, UpWindow,  // window coordinates
+    Wheel,                                        // logical coordinates; count holds the signed notches
     Key, Type, Lua, Wait, Screenshot, ScreenshotLogical, ExpectWindow, ExpectLabel, ExpectSprite, ExpectLua, Dump, Autoshoot, ExpectDump, Focus, Resize, Diag, Quit
   } kind = Kind::Quit;
   float x = 0, y = 0;

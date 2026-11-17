@@ -33,6 +33,10 @@ class Ledger : public ui::Window {
   static bool isTab(const std::string& s) { return s == kTabs[0] || s == kTabs[1] || s == kTabs[2]; }
   // TRedrawTask's rate 10 (docs/re/choc2-ledger-binary.md section 3): 100 ms per money and quest-bar step.
   static constexpr double kTickMs = 100;
+  // With the overlay's Enhance.smoothMoney (docs/design/enhancements.md section 5) the money counts as in Chocolatier 3:
+  // 1/20 of the gap every 50 ms. The quest bar keeps its 100 ms step.
+  static constexpr double kSmoothTickMs = 50;
+  static constexpr int kSmoothSteps = 20;
 
   // The first Ledger in the modal chain, from the top modal down; null when there is none.
   static Ledger* current(ui::WindowManager& wm);
@@ -54,7 +58,7 @@ class Ledger : public ui::Window {
   // resetShared, once per call.
   void reset(double money);
   static void resetShared(script::ScriptContext& ctx);
-  // UpdateBadge(gSim): the table is at `index` of `L`. Targets t.money (fixed step max(1, gap / 7)) and writes the money,
+  // UpdateBadge(gSim): the table is at `index` of `L`. Targets t.money (fixed step max(1, gap / 7), or the smooth step) and writes the money,
   // date, rank and score Texts. It does not rebuild the badge: that is UpdateDynamicContent("badge").
   void updateBadge(lua_State* L, int index);
   // Writes the badge Texts again from the stored fields (after the badge DynamicWindow was rebuilt).
@@ -75,6 +79,8 @@ class Ledger : public ui::Window {
  private:
   void showTab(const std::string& tab);
   void writeMoney();
+  // A new amount for the shared counter, with the original's step or the smooth one. Negative is 0.
+  void setMoneyTarget(double amount);
   void writeBadgeTexts();
   Session& shared() const { return sessionOf(ctx_) ? *sessionOf(ctx_) : *ownSession_; }
   int& questY() { return shared().questY; }
@@ -87,6 +93,7 @@ class Ledger : public ui::Window {
 
   script::ScriptContext& ctx_;
   int showQuestY_ = 0, hideQuestY_ = 53;
+  bool smoothMoney_ = false;
   std::unique_ptr<Session> ownSession_;  // only when there is no Session (a ledger built outside the game)
   double rank_ = 0, weeks_ = 0, days_ = 0, score_ = 0;  // the last UpdateBadge table (unsigned in the binary)
 };

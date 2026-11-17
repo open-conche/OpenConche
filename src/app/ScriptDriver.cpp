@@ -2,6 +2,7 @@
 
 #include "app/Diagnostics.h"
 
+#include <cmath>
 #include <cstdio>
 #include <sstream>
 #include <utility>
@@ -61,6 +62,19 @@ ParsedScript parseScript(const std::string& text) {
     else if (cmd == "move-window") { c.kind = ScriptCommand::Kind::MoveWindow; good = coords(); }
     else if (cmd == "down-window") { c.kind = ScriptCommand::Kind::DownWindow; good = coords(); }
     else if (cmd == "up-window") { c.kind = ScriptCommand::Kind::UpWindow; good = coords(); }
+    else if (cmd == "wheel") {
+      c.kind = ScriptCommand::Kind::Wheel;
+      double x = 0, y = 0, n = 0;
+      good = readNumber(in, x) && readNumber(in, y) && readNumber(in, n) && noTrailing(in) && n == std::floor(n) &&
+             n != 0 && std::fabs(n) <= 1000;
+      if (good) {
+        c.x = static_cast<float>(x);
+        c.y = static_cast<float>(y);
+        c.count = static_cast<int>(n);
+      } else {
+        fail("'wheel' needs: wheel x y N (N a non-zero whole number of notches, positive up)");
+      }
+    }
     else if (cmd == "move") { c.kind = ScriptCommand::Kind::Move; good = coords(); }
     else if (cmd == "down") { c.kind = ScriptCommand::Kind::Down; good = coords(); }
     else if (cmd == "up") { c.kind = ScriptCommand::Kind::Up; good = coords(); }
@@ -312,6 +326,7 @@ void ScriptDriver::update(double nowMs) {
         input_.injectWindowMouseButton(c.x, c.y, true);
         input_.injectWindowMouseButton(c.x, c.y, false);
         break;
+      case K::Wheel: input_.injectWheel(c.x, c.y, c.count); break;
       case K::MoveWindow: input_.injectWindowMouseMove(c.x, c.y); break;
       case K::DownWindow: input_.injectWindowMouseButton(c.x, c.y, true); break;
       case K::UpWindow: input_.injectWindowMouseButton(c.x, c.y, false); break;

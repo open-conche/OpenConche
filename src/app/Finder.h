@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "app/Args.h"
+#include "gfx/Types.h"
 
 namespace choco::platform {
 class Window;
@@ -23,6 +24,18 @@ inline constexpr float kFinderSupportedSize = 10;
 inline constexpr int kFinderSupportedWidth = 680;
 
 
+// The finder card controls' rectangles, in the 800x600 logical screen; the card at list position `slot` (0 = top).
+// `check` is the `Enhancements` checkbox's hit area (the box and its label), under the directory line and clear of
+// the name, directory, Play and X. The unit test checks they do not overlap and fit the card.
+struct FinderCardRects {
+  gfx::RectI card, button, cross, check;
+};
+FinderCardRects finderCardRects(int slot);
+inline constexpr const char* kFinderEnhancementsLabel = "Enhancements";
+inline constexpr float kFinderEnhancementsSize = 10;
+inline constexpr int kFinderBoxSize = 10;  // the checkbox's square, drawn as rects (the built-in font has no brackets)
+inline constexpr int kFinderBoxGap = 6;    // between the square and the label
+
 // One labelled choice of the finder window (docs/design/game-finder.md). The order is the card order,
 // top to bottom; the ids are what --pick-game takes and what finder.txt stores.
 struct FinderVariant {
@@ -31,6 +44,7 @@ struct FinderVariant {
   const char* title;      // the error messages' name of the game
   const char* label;      // the plate label (built-in font: no parentheses, hence "Chocolatier 3 - Reforged")
   bool reforged;          // choc3: the tree must (true) or must not (false) hold community/account.lua
+  bool enhancements;      // the game has an enhancements overlay (docs/design/enhancements.md), so its card has the checkbox
 };
 extern const FinderVariant kFinderVariants[];
 extern const int kFinderVariantCount;
@@ -42,6 +56,9 @@ const FinderVariant* findFinderVariant(const std::string& id);
 struct FinderGameEntry {
   std::string dir;     // what the OS folder dialog returned
   std::string assets;  // the assets tree resolved from dir
+  // `<variant>.enhancements = 0|1` (docs/design/enhancements.md section 1): off plays exactly like the original. A
+  // missing line is on, only an off value is written, and re-pointing the entry keeps it.
+  bool enhancements = true;
 };
 struct GameLibrary {
   std::string last;  // the variant to boot ("" = none picked yet)
@@ -51,6 +68,18 @@ struct GameLibrary {
   // a missing line is on, and a rewrite keeps an off value.
   bool fixBugs = true;
 };
+
+// The library variant whose entry holds `assetsDir` (the booted assets folder, compared as written and then as the
+// same folder on disk), or nullptr when no entry does.
+const FinderVariant* variantForAssets(const GameLibrary& library, const std::string& assetsDir);
+
+// Whether the game booted from `assetsDir` runs with its enhancements: the entry's switch, and on for a folder the
+// library does not hold. Only for a run that was not booted through the library (a plain `--assets`).
+bool enhancementsForAssets(const GameLibrary& library, const std::string& assetsDir);
+
+// Whether the booted run takes its enhancements: by `o.variantId` when the finder, the saved choice or the switcher
+// booted it (the entry's switch, on when the library has none), else by the assets folder (enhancementsForAssets).
+bool enhancementsForRun(const GameLibrary& library, const Options& o);
 
 // games.cfg, key = value lines; an unparsable or missing file loads as an empty library (the finder is shown).
 // A ChocolatierEngine/finder.txt from before the rename is migrated into games.cfg when the new file is absent.
@@ -111,7 +140,9 @@ enum class FinderOutcome { Picked, Cancelled, Exit, Failed };
 // generated data file (the binary ships alone; the launcher appears before any game asset exists) - a solid
 // backdrop, one CARD per INSTALLED game (only registered games, no placeholders: the name the card's primary
 // element, the configured directory small and dim beneath it - elided to the box, the full path in the
-// footer while hovered - a PLAY button, and a small X that unregisters the game: a games.cfg erase, never a
+// footer while hovered - a PLAY button, an `Enhancements` checkbox (the entry's switch; games with an overlay
+// only; the box is drawn as rects because the built-in font has no brackets; it saves games.cfg at once and
+// never launches), and a small X that unregisters the game: a games.cfg erase, never a
 // disk change), the one global ADD GAME button under the list (the OS folder picker plus the EXISTING
 // detection: the first variant that validates over the picked folder's candidates names the game - the user
 // never has to know which game they are picking; adding registers it and does NOT launch, `last` untouched),

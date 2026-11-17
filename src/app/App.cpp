@@ -431,7 +431,7 @@ int Session::setup() {
     gameModule = &games::detectGame(*assetFs, o.game, gameWhy);
     diag::out("[game] %s (%s)\n", gameModule->profile().id, gameWhy.c_str());
     if (o.userDir.empty()) {
-      o.userDir = platform::defaultUserDir(
+      o.userDir = platform::defaultGameUserDir(
           gameModule->defaultUserLeaf(*assetFs).c_str());
       assetFs->setUserRoot(o.userDir);
     }
@@ -624,6 +624,15 @@ int Session::setup() {
       std::string libraryError;
       loadGameLibrary(library, libraryError);
       scriptConfig.set("fixbugs", library.fixBugs ? "1" : "0");
+      // The enhancements switch (docs/design/enhancements.md section 1) is the booted variant's own: found by the
+      // variant the finder booted (a plain --assets run: by the assets folder), on for a game the library does not hold.
+#ifdef __EMSCRIPTEN__
+      scriptConfig.set("enhancements", "1");  // the web build has no library
+#else
+      scriptConfig.set("enhancements", enhancementsForRun(library, o) ? "1" : "0");
+#endif
+    } else {
+      scriptConfig.set("enhancements", "0");  // automated runs exercise the originals' behaviour, library unread
     }
     for (const auto &[k, v] : o.configOverrides)
       scriptConfig.override(k, v);
@@ -786,6 +795,10 @@ void Session::routeInput(const platform::InputEvent &e) {
   case T::Text:
     in.type = ui::InputEvent::Type::Text;
     in.text = e.key;
+    break;
+  case T::Wheel:
+    in.type = ui::InputEvent::Type::Wheel;
+    in.wheel = e.wheel;
     break;
   default:
     return;
@@ -965,6 +978,13 @@ void Session::step() {
       break;
     case T::Text:
       diag::logInput(false, "[input] text \"%s\"\n", e.key.c_str());
+      routeInput(e);
+      break;
+    case T::Wheel:
+      // Off means dropped: with no wheel hook the event is not routed and not logged.
+      if (!windowManager || !windowManager->hasWheelHook())
+        break;
+      diag::logInput(false, "[input] wheel %g %g notches %d\n", e.x, e.y, e.wheel);
       routeInput(e);
       break;
     case T::FullscreenChanged:

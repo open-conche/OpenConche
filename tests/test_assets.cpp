@@ -211,14 +211,14 @@ TEST_CASE("Content file lists on a synthetic tree") {
 }
 
 TEST_CASE("UserDir default is per platform") {
-  const std::string d = choco::platform::defaultUserDir("Chocolatier3");
+  const std::string d = choco::platform::defaultGameUserDir("Chocolatier3");
   if (d.empty()) return;  // no HOME in this environment
 #if defined(__APPLE__)
-  CHECK(d.find("/Library/Application Support/Chocolatier3") != std::string::npos);
+  CHECK(d.find("/Library/Application Support/OpenConche/Chocolatier3") != std::string::npos);
 #elif defined(_WIN32)
-  CHECK(d.find("\\Chocolatier3") != std::string::npos);
+  CHECK(d.find("\\OpenConche\\Chocolatier3") != std::string::npos);
 #else
-  CHECK(d.find("chocolatier3") != std::string::npos);
+  CHECK(d.find("openconche/chocolatier3") != std::string::npos);
 #endif
 }
 

@@ -54,7 +54,7 @@ for flags in (["--headless", "--script", "x.script"], ["--frames", "2"], ["--no-
         errors.append("%s without --userdir wrote files: %r" % (flags, os.listdir(fake_home)))
 # --userdir naming the default folder is refused too when automated (spelled with a trailing slash and a dot segment).
 if sys.platform == "darwin":
-    dflt = os.path.join(fake_home, "Library", "Application Support", "Chocolatier3")
+    dflt = os.path.join(fake_home, "Library", "Application Support", "OpenConche", "Chocolatier3")
     r = subprocess.run([a.openconche, "--headless", "--userdir", dflt + "/./", "--frames", "1"], cwd=a.workdir,
                        capture_output=True, text=True, timeout=60, env=env_home)
     if r.returncode != 2 or "default user folder" not in r.stderr or os.listdir(fake_home):

@@ -307,6 +307,21 @@ std::vector<InputEvent> Window::pollEvents() {
         out.push_back(e);
         break;
       }
+      case SDL_EVENT_MOUSE_WHEEL: {
+        SDL_ConvertEventToRenderCoordinates(impl_->renderer, &ev);
+        int notches = ev.wheel.integer_y;
+        if (ev.wheel.direction == SDL_MOUSEWHEEL_FLIPPED) notches = -notches;
+        if (notches == 0) break;  // horizontal or sub-notch movement
+        InputEvent e;
+        e.type = InputEvent::Type::Wheel;
+        e.x = ev.wheel.mouse_x;
+        e.y = ev.wheel.mouse_y;
+        e.wheel = notches;
+        e.inArea = inLogicalArea(e.x, e.y);
+        if (!e.inArea) break;  // the letterbox bars: dropped
+        out.push_back(e);
+        break;
+      }
       case SDL_EVENT_KEY_DOWN: {
         bool alt = (ev.key.mod & SDL_KMOD_ALT) != 0;
         if (!ev.key.repeat &&
@@ -609,6 +624,23 @@ void Window::injectWindowMouseButton(float wx, float wy, bool down) {
   ev.button.clicks = 1;
   ev.button.x = wx;
   ev.button.y = wy;
+  SDL_PushEvent(&ev);
+}
+
+void Window::injectWheel(float lx, float ly, int notches) {
+  float wx = 0, wy = 0;
+  SDL_RenderCoordinatesToWindow(impl_->renderer, lx, ly, &wx, &wy);
+  SDL_Event ev{};
+  ev.type = SDL_EVENT_MOUSE_WHEEL;
+  ev.wheel.windowID = SDL_GetWindowID(impl_->window);
+  ev.wheel.which = 0;
+  ev.wheel.x = 0;
+  ev.wheel.y = static_cast<float>(notches);
+  ev.wheel.integer_x = 0;
+  ev.wheel.integer_y = notches;
+  ev.wheel.direction = SDL_MOUSEWHEEL_NORMAL;
+  ev.wheel.mouse_x = wx;
+  ev.wheel.mouse_y = wy;
   SDL_PushEvent(&ev);
 }
 

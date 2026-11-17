@@ -27,6 +27,7 @@ struct Session {
   std::string questHint;  // "" = no hint, so the bar hides
   std::string mode;       // "port" or "map" as last passed to SetLedgerMode; "" until one was
   double lastTickMs = -1;
+  bool halfTick = false;  // smooth money only: set on the 50 ms ticks between two quest-bar steps
 };
 
 // Holds the Session as a base declared before World, so it is destroyed after World's ledgers (bases go in reverse

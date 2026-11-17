@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <memory>
 #include <optional>
 #include <span>
@@ -28,13 +29,22 @@ namespace choco::app {
 namespace fs = std::filesystem;
 
 const FinderVariant kFinderVariants[] = {
-    {"choc1", "choc1", "Chocolatier", "Chocolatier", false},
-    {"choc2", "choc2", "Chocolatier 2", "Chocolatier 2", false},
-    {"choc3", "choc3", "Chocolatier 3", "Chocolatier 3", false},
-    {"choc3-reforged", "choc3", "Chocolatier 3 (Reforged)", "Chocolatier 3 - Reforged", true},
-    {"greatcc", "greatcc", "The Great Chocolate Chase", "The Great Chocolate Chase", false},
+    {"choc1", "choc1", "Chocolatier", "Chocolatier", false, true},
+    {"choc2", "choc2", "Chocolatier 2", "Chocolatier 2", false, true},
+    {"choc3", "choc3", "Chocolatier 3", "Chocolatier 3", false, true},
+    {"choc3-reforged", "choc3", "Chocolatier 3 (Reforged)", "Chocolatier 3 - Reforged", true, true},
+    {"greatcc", "greatcc", "The Great Chocolate Chase", "The Great Chocolate Chase", false, false},
 };
 const int kFinderVariantCount = 5;
+
+FinderCardRects finderCardRects(int slot) {
+  FinderCardRects r;
+  r.card = {60, 106 + slot * 72, 680, 66};  // 66 high, 6 apart: five cards and the ADD GAME button fit above the supported line
+  r.button = {600, r.card.y + 28, 128, 32};
+  r.cross = {706, r.card.y + 7, 22, 22};
+  r.check = {84, r.card.y + 46, 130, 14};  // below the directory line (y+28..40), left of Play
+  return r;
+}
 
 const FinderVariant* findFinderVariant(const std::string& id) {
   for (int i = 0; i < kFinderVariantCount; ++i)
@@ -106,8 +116,8 @@ std::string validateAssetsForVariant(const FinderVariant& variant, const std::st
 namespace {
 
 // The engine's own preference folder (OpenConche; docs/design/game-finder.md section 3). One level, exactly where
-// SDL_GetPrefPath would put it on each platform, because the per-game user folders (Chocolatier3 and friends)
-// already use platform::defaultUserDir and SDL's (org, app) pair would add a nesting level no one asked for.
+// SDL_GetPrefPath would put it on each platform, and the per-game user folders (Chocolatier3 and friends) are
+// subfolders of it (platform::defaultGameUserDir); SDL's (org, app) pair would add a nesting level no one asked for.
 const char* kEngineLeaf = "OpenConche";
 const char* kLibraryFile = "games.cfg";
 
@@ -164,8 +174,12 @@ bool loadGameLibrary(GameLibrary& out, std::string& error) {
       const std::string id = kFinderVariants[i].id;
       if (key == id + ".dir") out.entries[id].dir = value;
       if (key == id + ".assets") out.entries[id].assets = value;
+      if (key == id + ".enhancements") out.entries[id].enhancements = value != "0";
     }
   }
+  // A lone `<variant>.enhancements` line is no game: only entries that name a folder are kept.
+  for (auto it = out.entries.begin(); it != out.entries.end();)
+    it = (it->second.dir.empty() && it->second.assets.empty()) ? out.entries.erase(it) : std::next(it);
   if (!out.last.empty() && !out.entries.count(out.last)) {
     error = "games.cfg: last = '" + out.last + "' has no entry";
     return false;
@@ -199,6 +213,7 @@ bool saveGameLibrary(const GameLibrary& library, std::string& error) {
     if (it == library.entries.end()) continue;
     out << kFinderVariants[i].id << ".dir = " << it->second.dir << "\n"
         << kFinderVariants[i].id << ".assets = " << it->second.assets << "\n";
+    if (!it->second.enhancements) out << kFinderVariants[i].id << ".enhancements = 0\n";
   }
   return out.good();
 }
@@ -217,6 +232,7 @@ int finderPick(Options& o, const FinderVariant& variant, const std::string& pick
     }
     o.assetsDir = cand;
     o.game = variant.moduleId;
+    o.variantId = variant.id;
     diag::out("[finder] variant %s, assets %s\n", variant.id, cand.c_str());
     return 0;
   }
@@ -243,11 +259,42 @@ AddGameResult addGameFromFolder(GameLibrary& library, const std::string& folder)
     r.status = AddGameStatus::AlreadyListed;
     return r;
   }
-  library.entries[r.id] = {folder, r.assets};
+  FinderGameEntry& entry = library.entries[r.id];  // a re-pointed entry keeps its enhancements switch
+  entry.dir = folder;
+  entry.assets = r.assets;
   r.status = AddGameStatus::Added;
   if (!saveGameLibrary(library, r.error)) r.status = AddGameStatus::SaveFailed;
   diag::out("[finder] added %s: assets %s\n", r.id.c_str(), r.assets.c_str());
   return r;
+}
+
+const FinderVariant* variantForAssets(const GameLibrary& library, const std::string& assetsDir) {
+  if (assetsDir.empty()) return nullptr;
+  const auto sameFolder = [&](const std::string& a) {
+    if (a.empty()) return false;
+    if (a == assetsDir) return true;
+    std::error_code ec;
+    const bool same = fs::equivalent(platform::pathFromUtf8(a), platform::pathFromUtf8(assetsDir), ec);
+    return !ec && same;
+  };
+  for (int i = 0; i < kFinderVariantCount; ++i) {
+    const auto it = library.entries.find(kFinderVariants[i].id);
+    if (it != library.entries.end() && sameFolder(it->second.assets)) return &kFinderVariants[i];
+  }
+  return nullptr;
+}
+
+bool enhancementsForAssets(const GameLibrary& library, const std::string& assetsDir) {
+  const FinderVariant* v = variantForAssets(library, assetsDir);
+  return !v || library.entries.at(v->id).enhancements;
+}
+
+bool enhancementsForRun(const GameLibrary& library, const Options& o) {
+  if (!o.variantId.empty()) {
+    const auto it = library.entries.find(o.variantId);
+    return it == library.entries.end() || it->second.enhancements;
+  }
+  return enhancementsForAssets(library, o.assetsDir);
 }
 
 bool bootFromLibrary(const FinderVariant& variant, const GameLibrary& library, Options& o, std::string& why) {
@@ -265,6 +312,7 @@ bool bootFromLibrary(const FinderVariant& variant, const GameLibrary& library, O
     if (validateAssetsForVariant(variant, cand).empty()) {
       o.assetsDir = cand;
       o.game = variant.moduleId;
+      o.variantId = variant.id;
       return true;
     }
   }
@@ -370,14 +418,20 @@ FinderOutcome runGameFinder(Options& o, std::string& why, const FinderHost& host
   GameLibrary library;
   std::string libraryError;  // a stale file is tolerated; a successful pick below rewrites it whole
   loadGameLibrary(library, libraryError);
+  // The variant of the game running under the switcher (empty standalone, or for a run the library did not boot).
+  std::string runningId;
+  if (inGame) {
+    if (!o.variantId.empty()) runningId = o.variantId;
+    else if (const FinderVariant* v = variantForAssets(library, o.assetsDir)) runningId = v->id;
+  }
   struct CardUi {
     int variant = -1;  // which kFinderVariants entry this card shows
-    gfx::RectI card{}, button{}, cross{};
+    gfx::RectI card{}, button{}, cross{}, check{};  // check: empty for a game with no overlay
     std::string dir;  // what the folder picker returned
     bool playable = false;
     gfx::text::TextLayout name, path, action, actionHover, crossDot;
   };
-  constexpr int kCardPitch = 72;  // 66 high, 6 apart: five cards and the ADD GAME button fit above the supported-games line
+  constexpr int kCardPitch = 72;  // finderCardRects' pitch: five cards and the ADD GAME button fit above the supported-games line
   CardUi games[5];  // games[0..count-1] are the installed list, in kFinderVariants order
   int count = 0;
   constexpr gfx::RectI kExitRect{660, 30, 108, 28};  // tucked top right, out of the list's way
@@ -435,9 +489,11 @@ FinderOutcome runGameFinder(Options& o, std::string& why, const FinderHost& host
       CardUi& g = games[count++];
       g.variant = v;
       g.dir = it->second.dir;
-      g.card = {60, 106 + (count - 1) * kCardPitch, 680, 66};
-      g.button = {600, g.card.y + 28, 128, 32};
-      g.cross = {706, g.card.y + 7, 22, 22};
+      const FinderCardRects rects = finderCardRects(count - 1);
+      g.card = rects.card;
+      g.button = rects.button;
+      g.cross = rects.cross;
+      g.check = kFinderVariants[v].enhancements ? rects.check : gfx::RectI{};
       Options probe;
       std::string probeWhy;
       g.playable = bootFromLibrary(kFinderVariants[v], library, probe, probeWhy);
@@ -462,6 +518,10 @@ FinderOutcome runGameFinder(Options& o, std::string& why, const FinderHost& host
   const gfx::text::TextLayout emptyMessage = makeText("No games added yet.", 12, kDim, 680, 14, true);
   const gfx::text::TextLayout supported = makeText(
       kFinderSupportedLine, kFinderSupportedSize, kDim, kFinderSupportedWidth, 12, true);
+  const gfx::text::TextLayout enhLabel =
+      makeText(kFinderEnhancementsLabel, kFinderEnhancementsSize, kDim, 120, 12);
+  const gfx::text::TextLayout enhLabelHot =
+      makeText(kFinderEnhancementsLabel, kFinderEnhancementsSize, kInk, 120, 12);
   const char* const exitText = inGame ? "Back to game" : "Exit";
   const gfx::text::TextLayout exitLabel = makeText(exitText, 12, kInk, 108, 14, true);
   const gfx::text::TextLayout exitHover =
@@ -493,7 +553,7 @@ FinderOutcome runGameFinder(Options& o, std::string& why, const FinderHost& host
     platform::showWarning("OpenConche", msg);
   };
   gfx::text::TextLayout footer;
-  int footerFor = -2;  // -1: the contextual line; 0..4: that card's full directory (rebuilt on change)
+  int footerFor = -2;  // -1: the contextual line; 0..4: that card's full directory; 400+i: card i's Enhancements hint
   int picked = -1;              // the variant whose Play clicked a stale card: its re-locate folder dialog
   bool dialogOpen = false;    // that re-locate folder dialog is up (not the ADD GAME one)
   bool dialogResolved = false;  // the re-locate dialog's callback fired
@@ -505,13 +565,15 @@ FinderOutcome runGameFinder(Options& o, std::string& why, const FinderHost& host
   bool exitArmed = false;  // Exit/Back pressed; it fires on the release, so the game never sees a stray MouseUp
   int hoveredCard = -1;  // the card under the mouse (the footer shows its full directory, if it has one)
   constexpr int kHotExit = 300;
-  int hot = -1;          // the hovered control: i card i's Play, 100+i an X, 200 ADD GAME, kHotExit Exit/Back
+  int hot = -1;          // the hovered control: i card i's Play, 100+i an X, 200 ADD GAME, kHotExit Exit/Back, 400+i a checkbox
   const auto inRect = [&](const gfx::RectI& r, double x, double y) {
     return x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h;
   };
   const auto saveChosen = [&](const FinderVariant& variant, const std::string& dir, const std::string& assets) {
     library.last = variant.id;
-    library.entries[variant.id] = {dir, assets};
+    FinderGameEntry& entry = library.entries[variant.id];  // a re-located game keeps its enhancements switch
+    entry.dir = dir;
+    entry.assets = assets;
     if (!saveGameLibrary(library, libraryError))
       platform::showWarning("OpenConche", "The choice runs now but could not be saved: " + libraryError);
     return true;
@@ -541,6 +603,7 @@ FinderOutcome runGameFinder(Options& o, std::string& why, const FinderHost& host
           for (int i = 0; i < count && hot < 0; ++i) {
             if (inRect(games[i].button, e.x, e.y)) hot = i;
             if (inRect(games[i].cross, e.x, e.y)) hot = 100 + i;
+            if (inRect(games[i].check, e.x, e.y)) hot = 400 + i;
           }
           if (hot < 0 && inRect(addRect, e.x, e.y)) hot = 200;
           if (hot < 0 && inRect(kExitRect, e.x, e.y)) hot = kHotExit;
@@ -550,6 +613,24 @@ FinderOutcome runGameFinder(Options& o, std::string& why, const FinderHost& host
           exitArmed = true;
           continue;
         }
+        bool toggled = false;
+        for (int i = 0; i < count && !toggled; ++i) {
+          if (!inRect(games[i].check, e.x, e.y)) continue;
+          // The Enhancements checkbox: flips the entry's switch and saves it at once. It neither launches the
+          // game nor touches `last`.
+          toggled = true;
+          FinderGameEntry& entry = library.entries[kFinderVariants[games[i].variant].id];
+          entry.enhancements = !entry.enhancements;
+          if (!saveGameLibrary(library, libraryError)) {
+            // The next boot re-reads the file, so an unsaved toggle would not hold: put it back.
+            entry.enhancements = !entry.enhancements;
+            platform::showWarning("OpenConche",
+                                  "The Enhancements setting was not changed: it could not be saved (" + libraryError + ").");
+          }
+          diag::out("[finder] %s enhancements %s\n", kFinderVariants[games[i].variant].id,
+                    entry.enhancements ? "on" : "off");
+        }
+        if (toggled) continue;
         if (inRect(addRect, e.x, e.y)) {
           // The ONE way a game is added: ask for a folder and let the existing detection name the game.
           // Nothing launches from here - the card appears, `last` stays as it was, and the user keeps
@@ -586,11 +667,12 @@ FinderOutcome runGameFinder(Options& o, std::string& why, const FinderHost& host
             // A registered game that still validates: one click boots it, and `last` remembers it for the
             // automatic launch. A stale entry falls through to its re-locate folder dialog below - the
             // click still reads "Play" (the games are gone somewhere: the picker asks where they went).
-            saveChosen(variant, library.entries[variant.id].dir, library.entries[variant.id].assets);
+            saveChosen(variant, library.entries[variant.id].dir, boot.assetsDir);
             // Only the game changes: --scale, --fullscreen, --userdir, --log and the rest of `o` stay as the
             // command line set them (a whole-struct assignment here once reset them all).
             o.assetsDir = boot.assetsDir;
             o.game = boot.game;
+            o.variantId = boot.variantId;
             diag::out("[finder] chose %s: assets %s\n", variant.id, o.assetsDir.c_str());
             return FinderOutcome::Picked;
           }
@@ -637,6 +719,7 @@ FinderOutcome runGameFinder(Options& o, std::string& why, const FinderHost& host
           saveChosen(variant, dialogPath, assets);
           o.assetsDir = assets;
           o.game = variant.moduleId;
+          o.variantId = variant.id;
           diag::out("[finder] chose %s: assets %s\n", variant.id, assets.c_str());
           return FinderOutcome::Picked;
         }
@@ -700,6 +783,17 @@ FinderOutcome runGameFinder(Options& o, std::string& why, const FinderHost& host
                             float(g.cross.h - 2)},
                             kButtonBody, gfx::Blend::Opaque);
       g.crossDot.draw(*renderer, uiAtlas, {float(g.cross.x), float(g.cross.y + 5)});
+      if (g.check.w > 0) {
+        // The box is rects (the built-in font has no brackets): a one-pixel edge, a body, and a gold square when on.
+        const bool chHot = hot == 400 + i;
+        const bool on = library.entries.at(kFinderVariants[g.variant].id).enhancements;
+        const float bx = float(g.check.x), by = float(g.check.y + 1), bs = float(kFinderBoxSize);
+        renderer->fillRect({bx, by, bs, bs}, chHot ? kGold : kButtonEdge, gfx::Blend::Opaque);
+        renderer->fillRect({bx + 1, by + 1, bs - 2, bs - 2}, kButtonBody, gfx::Blend::Opaque);
+        if (on) renderer->fillRect({bx + 3, by + 3, bs - 6, bs - 6}, kGold, gfx::Blend::Opaque);
+        (chHot ? enhLabelHot : enhLabel)
+            .draw(*renderer, uiAtlas, {bx + float(kFinderBoxSize + kFinderBoxGap), float(g.check.y + 1)});
+      }
       renderer->fillRect({float(g.button.x), float(g.button.y), float(g.button.w), float(g.button.h)},
                          kButtonEdge, gfx::Blend::Opaque);
       renderer->fillRect({float(g.button.x + 1), float(g.button.y + 1), float(g.button.w - 2),
@@ -717,10 +811,19 @@ FinderOutcome runGameFinder(Options& o, std::string& why, const FinderHost& host
     (hot == 200 ? addHover : addLabel).draw(*renderer, uiAtlas, {float(addRect.x), float(addRect.y + 11)});
     supported.draw(*renderer, uiAtlas, {60, 512});
     // The footer: the contextual line, or the hovered card's full directory while one is hovered.
-    const int footerWant = (hoveredCard >= 0 && !games[hoveredCard].dir.empty()) ? hoveredCard : -1;
+    const int footerWant = hot >= 400 ? hot
+                           : (hoveredCard >= 0 && !games[hoveredCard].dir.empty()) ? hoveredCard : -1;
     if (footerWant != footerFor) {
       footerFor = footerWant;
-      footer = footerWant >= 0 ? makeText(shownPath(games[footerWant].dir), 10, kDim, 680, 28, true)
+      // In the switcher the running game's overlay was fixed when it booted: the checkbox applies from its next start.
+      const bool runningGame = inGame && footerWant >= 400 && kFinderVariants[games[footerWant - 400].variant].id == runningId;
+      footer = footerWant >= 400
+                   ? makeText(runningGame ? "This game is running: the setting takes effect the next time it starts. Off plays "
+                                            "exactly like the original."
+                                          : "Mouse wheel scrolling and other conveniences the original did not have. Off plays "
+                                            "exactly like the original.",
+                              11, kDim, 680, 30, true)
+               : footerWant >= 0 ? makeText(shownPath(games[footerWant].dir), 10, kDim, 680, 28, true)
                                 : makeText(contextMessage(), 11, kDim, 680, 30, true);
     }
     footer.draw(*renderer, uiAtlas, {60, 552});
