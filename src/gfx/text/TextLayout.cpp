@@ -266,6 +266,10 @@ class Builder {
     if (gi < 0) {  // the engine's default font takes over for characters the run's font lacks
       font = fallbackFont();
       gi = font->glyphIndex(cp);
+      if (gi < 0 && style_.missingAsBox) {
+        font = builtinFont();
+        gi = font->glyphIndex(0xFFFD);
+      }
       if (gi < 0) return true;  // in neither font: no width, nothing drawn
     }
     const GlyphMetrics m = font->metrics(gi);

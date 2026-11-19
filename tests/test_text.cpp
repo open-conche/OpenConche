@@ -704,8 +704,21 @@ TEST_CASE("layout: markup") {
   CHECK(ug[0].cp == 0xe9);
   CHECK(ug[1].cp == 0x4e2d);
   CHECK(ug[2].x - ug[1].x == doctest::Approx(100 * 0.8f * 20 / 75).epsilon(0.02));  // no descent in this font: em box is 75 units
-  // characters in no font take no space
+  // characters in no game font take no space
+  FontCache gameFonts;
+  gameFonts.setEmbedded(mono());
+  TextStyle gs = style();
+  gs.fonts = &gameFonts;
+  CHECK(TextLayout::build("a\xf0\x9f\x98\x80""b", gs, 400, 100).glyphPositions().size() == 2);
+  // nor without a cache, unless the style asks for the built-in font's U+FFFD box
   CHECK(TextLayout::build("a\xf0\x9f\x98\x80""b", style(), 400, 100).glyphPositions().size() == 2);
+  TextStyle boxed = style();
+  boxed.missingAsBox = true;
+  CHECK(TextLayout::build("a\xf0\x9f\x98\x80""b", boxed, 400, 100).glyphPositions().size() == 3);
+  // game text in the built-in font (a window without a face gets __DEFAULT) draws nothing either
+  TextStyle builtinRun = gs;
+  builtinRun.font = gameFonts.get("__DEFAULT");
+  CHECK(TextLayout::build("a\xf0\x9f\x98\x80""b", builtinRun, 400, 100).glyphPositions().size() == 2);
   // hex colours
   CHECK(parseHexColor("#ff8000").color.g == doctest::Approx(128 / 255.0f));
   CHECK(parseHexColor("00ff0080").color.a == doctest::Approx(128 / 255.0f));
@@ -825,11 +838,17 @@ TEST_CASE("layout: glyphs missing from the run font come from the default font")
   CHECK(TextLayout::build("aq", s, 200, 100).glyphPositions().size() == 2);
   CHECK(countQuads(s, "aq") == 2);  // 'q' is drawn with a visible built-in glyph
   CHECK(countQuads(s, "a\xc3\xa9") == 1);  // not in the built-in font either: nothing, and no width
+  TextStyle boxed = s;
+  boxed.missingAsBox = true;  // engine UI: the built-in font's U+FFFD box, with the box's width
+  CHECK(countQuads(boxed, "a\xc3\xa9") == 2);
+  CHECK(TextLayout::build("a\xc3\xa9", boxed, 200, 100).glyphPositions().size() == 2);
+  CHECK(TextLayout::build("\\\\x\\<b>", s, 200, 100).glyphPositions().size() == 5);  // escaped: \, x, <, b, >
   TextStyle noCache = s;
   noCache.fonts = nullptr;
   CHECK(countQuads(noCache, "aq") == 2);
   CHECK(builtinFont()->has('q'));
   CHECK(builtinFont()->has('7'));
+  for (std::uint32_t cp = 0x20; cp <= 0x7e; ++cp) CHECK_MESSAGE(builtinFont()->has(cp), "missing ", char(cp));
   CHECK(builtinFont()->ascent() == doctest::Approx(84));
   CHECK(builtinFont()->descent() == doctest::Approx(12));
   // the fallback glyph is sized by its own font's metrics for the same line box

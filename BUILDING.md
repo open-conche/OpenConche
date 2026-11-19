@@ -36,6 +36,12 @@ binary runs on anything newer); `openconche --version` prints the version,
 which is set once in `CMakeLists.txt` (`project(... VERSION ...)`). On Windows
 use the Visual Studio generator (`-A x64`, then `--config Release`).
 
+The published archives are built by GitHub Actions (`.github/workflows/release.yml`) from the tagged
+commit, and each carries a signed build-provenance attestation. To check that a download came from
+this repository's workflow:
+
+    gh attestation verify openconche-<version>-<os>-<arch>.zip -R open-conche/OpenConche
+
 On Linux install SDL's window and audio backends before configuring, or the
 binary won't have a display driver (Debian and Ubuntu names): `libx11-dev
 libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxfixes-dev libxss-dev

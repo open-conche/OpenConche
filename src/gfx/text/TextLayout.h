@@ -31,6 +31,9 @@ struct TextStyle {
   // Chocolatier 1 (0x44a99e-0x44a9d7): an overflowing glyph that ends the string and has no space candidate stays on the line
   // instead of starting a new one. The exe's other no-candidate case (a non-last glyph is dropped) is not implemented.
   bool keepLastOverflowChar = false;
+  // Engine UI: a character in neither font draws the built-in font's U+FFFD box. Off for game text, where the
+  // original gives such a character no width and draws nothing.
+  bool missingAsBox = false;
 };
 
 // Fonts and the glyph atlas as one unit, installed once so TextLayout::draw(renderer, origin, alpha) can find them.

@@ -448,6 +448,7 @@ FinderOutcome runGameFinder(Options& o, std::string& why, const FinderHost& host
     st.fonts = &uiFonts;
     st.size = size;
     st.color = color;
+    st.missingAsBox = true;
     st.flags = (center ? gfx::text::kHAlignCenter : gfx::text::kHAlignLeft) + gfx::text::kVAlignTop;
     return st;
   };
@@ -458,22 +459,27 @@ FinderOutcome runGameFinder(Options& o, std::string& why, const FinderHost& host
   const auto widthAt = [&](const std::string& s, float size, const gfx::ColorF& color) {
     return gfx::text::TextLayout::measure(s, makeStyle(size, color, false), 4000, 40).w;
   };
-  // The built-in font has no backslash, so a Windows path would draw with gaps. Shown with forward slashes (which
-  // Windows accepts); the stored path is untouched.
-  const auto shownPath = [](std::string s) {
-    std::replace(s.begin(), s.end(), '\\', '/');
-    return s;
+  // A path drawn as written: the layout reads a backslash as an escape and '<' as the start of a tag, so both are
+  // escaped.
+  const auto literal = [](const std::string& s) {
+    std::string out;
+    for (char c : s) {
+      if (c == '\\' || c == '<') out += '\\';
+      out += c;
+    }
+    return out;
   };
   // A directory too long for its box keeps its TAIL (a path's end carries the information - the folders'
   // names, not the /Users prefix): "..." plus the longest tail that fits; the full form still reads in the
   // footer while the card is hovered.
   // Tails start on a UTF-8 character boundary (never inside a multibyte sequence); a path is at most a few
   // hundred bytes and this runs once per list rebuild, so the linear search is fine.
+  // Returns markup (through literal).
   const auto elide = [&](const std::string& s, float size, const gfx::ColorF& color, int tw) {
-    if (widthAt(s, size, color) <= tw) return s;
+    if (widthAt(literal(s), size, color) <= tw) return literal(s);
     for (std::size_t j = s.size(); j >= 1; --j) {
       if ((static_cast<unsigned char>(s[s.size() - j]) & 0xC0) == 0x80) continue;  // a continuation byte
-      const std::string t = "..." + s.substr(s.size() - j);
+      const std::string t = literal("..." + s.substr(s.size() - j));
       if (widthAt(t, size, color) <= tw) return t;
     }
     return std::string("...");
@@ -498,7 +504,7 @@ FinderOutcome runGameFinder(Options& o, std::string& why, const FinderHost& host
       std::string probeWhy;
       g.playable = bootFromLibrary(kFinderVariants[v], library, probe, probeWhy);
       g.name = makeText(kFinderVariants[v].label, 16, kInk, 480, 18);
-      g.path = makeText(elide(shownPath(g.dir), 10, kDim, 480), 10, kDim, 480, 12);
+      g.path = makeText(elide(g.dir, 10, kDim, 480), 10, kDim, 480, 12);
       g.action = makeText("Play", 13, g.playable ? kGold : kInk, 128, 14, true);
       g.actionHover = makeText("<u>Play</u>", 13, g.playable ? kGold : kInk, 128, 14, true);
       g.crossDot = makeText("X", 10, kInk, 22, 14, true);
@@ -784,7 +790,7 @@ FinderOutcome runGameFinder(Options& o, std::string& why, const FinderHost& host
                             kButtonBody, gfx::Blend::Opaque);
       g.crossDot.draw(*renderer, uiAtlas, {float(g.cross.x), float(g.cross.y + 5)});
       if (g.check.w > 0) {
-        // The box is rects (the built-in font has no brackets): a one-pixel edge, a body, and a gold square when on.
+        // The box is rects: a one-pixel edge, a body, and a gold square when on.
         const bool chHot = hot == 400 + i;
         const bool on = library.entries.at(kFinderVariants[g.variant].id).enhancements;
         const float bx = float(g.check.x), by = float(g.check.y + 1), bs = float(kFinderBoxSize);
@@ -823,7 +829,7 @@ FinderOutcome runGameFinder(Options& o, std::string& why, const FinderHost& host
                                           : "Mouse wheel scrolling and other conveniences the original did not have. Off plays "
                                             "exactly like the original.",
                               11, kDim, 680, 30, true)
-               : footerWant >= 0 ? makeText(shownPath(games[footerWant].dir), 10, kDim, 680, 28, true)
+               : footerWant >= 0 ? makeText(literal(games[footerWant].dir), 10, kDim, 680, 28, true)
                                 : makeText(contextMessage(), 11, kDim, 680, 30, true);
     }
     footer.draw(*renderer, uiAtlas, {60, 552});

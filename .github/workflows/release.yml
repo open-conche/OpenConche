@@ -1,0 +1,122 @@
+# Release archives for macOS (arm64), Windows (x64) and Linux (x86_64), built by GitHub from the tagged source.
+#
+# Push a tag named after the version in CMakeLists.txt (project(... VERSION 1.2) -> v1.2) and this builds the three
+# `dist` archives, signs a build-provenance attestation for each, and opens a draft release with them attached.
+# Run it by hand (Actions -> release -> Run workflow) to build and attest without making a release; the archives
+# are then on the run's page.
+#
+# Anyone can check that a downloaded archive came from this repository's workflow:
+#   gh attestation verify openconche-<version>-<os>-<arch>.zip -R <owner>/<repo>
+#
+# Actions are pinned to commit SHAs; the comment names the tag each SHA was taken from.
+
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build (${{ matrix.os }})
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      id-token: write       # the attestation's signing identity
+      attestations: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos
+            runner: macos-15
+          - os: windows
+            runner: windows-2025
+          # ubuntu-22.04 is glibc 2.35, the floor the Linux README.txt promises.
+          - os: linux
+            runner: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install build tools (macOS)
+        if: matrix.os == 'macos'
+        run: brew install ninja
+
+      - name: Install build tools and SDL backends (Linux)
+        if: matrix.os == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ninja-build \
+            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxfixes-dev libxss-dev \
+            libxtst-dev libwayland-dev libxkbcommon-dev libdecor-0-dev libegl1-mesa-dev \
+            libgl1-mesa-dev libdrm-dev libgbm-dev libasound2-dev libpulse-dev \
+            libpipewire-0.3-dev libdbus-1-dev libudev-dev
+
+      - name: Configure and build (macOS, Linux)
+        if: matrix.os != 'windows'
+        run: |
+          cmake -S . -B build/release -G Ninja -DCHOCO_RELEASE=ON
+          cmake --build build/release --target dist
+
+      - name: Configure and build (Windows)
+        if: matrix.os == 'windows'
+        run: |
+          cmake -S . -B build/release -A x64 -DCHOCO_RELEASE=ON
+          cmake --build build/release --config Release --target dist
+
+      - name: Check the archive matches the tag
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          shopt -s nullglob
+          files=(build/release/dist/openconche-*.zip build/release/dist/openconche-*.tar.gz)
+          [ ${#files[@]} -eq 1 ] || { echo "expected one archive, found: ${files[*]}"; exit 1; }
+          want="openconche-${GITHUB_REF_NAME#v}-"
+          case "$(basename "${files[0]}")" in
+            "$want"*) ;;
+            *) echo "tag $GITHUB_REF_NAME does not match $(basename "${files[0]}") (CMakeLists.txt VERSION)"; exit 1 ;;
+          esac
+
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8  # v4.2.2
+        with:
+          subject-path: |
+            build/release/dist/openconche-*.zip
+            build/release/dist/openconche-*.tar.gz
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: dist-${{ matrix.os }}
+          path: |
+            build/release/dist/openconche-*.zip
+            build/release/dist/openconche-*.tar.gz
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with:
+          pattern: dist-*
+          path: dist
+          merge-multiple: true
+
+      - name: Create a draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --repo "$GITHUB_REPOSITORY" --draft --verify-tag \
+            --title "OpenConche ${GITHUB_REF_NAME#v}" \
+            --notes "Built from ${GITHUB_SHA} by ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}.
+
+          Check a download with: \`gh attestation verify <archive> -R ${GITHUB_REPOSITORY}\`"
